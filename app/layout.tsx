@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
   const imageUrl = `${protocol}://${host}/og-theater-command.png`;
-  const description = "Choose a theater, build cities, raise armies, and command real-time battles across ancient Italy, Greece, and the Aegean.";
+  const description = "Rewrite the rules, choose a theater, manage generals, diplomacy, supplies and sieges, then command real-time battles across the ancient Mediterranean.";
   return {
     title: "Imperium: Field Command",
     description,

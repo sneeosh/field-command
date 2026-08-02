@@ -5,13 +5,18 @@ A browser strategy game with Markdown-driven theaters, turn-based cities, econom
 ## Playable systems
 
 - Independent field armies with road movement, splitting, merging, garrisoning, and reinforcement
+- Named generals with traits, command, loyalty, victories, and evolving army traditions
+- Supplies, seasonal attrition, sea-route costs, and march, fortify, raid, or ambush stances
+- Multi-turn sieges with blockades, breaches, negotiated surrender, assaults, withdrawal, and defender sallies
 - Turn-based recruitment, construction, replenishment, population costs, income, and upkeep
 - Theater-aware campaign AI that recruits, attacks, captures cities, and obeys the same economy
-- Tactical deployment with individual or Shift-selected cohort repositioning
-- Targeted attacks, formations, unit facing, flanking, fatigue, ammunition, charges, hills, roads, and walls
+- Diplomacy with independent powers, trade, alliances, influence, and allied reinforcements
+- Tactical deployment with drag selection, Shift selection, control groups, and formation-preserving movement
+- Attack, hold, skirmish, charge, and retreat orders with role-aware enemy tactics
+- Procedural hills, forests, rivers, weather, reserves, walls, unit facing, flanking, fatigue, and ammunition
 - Persistent casualties and experience, pursuit, withdrawal, and city capture outcomes
 - Italy & Sicily as Rome against Carthage, plus Greece & the Aegean as Macedon against the Hellenic League
-- Theater-specific deadlines and objectives, dynamic events, victory and defeat states
+- Public order, culture, council decisions, story events, and conquest or diplomatic victory paths
 - Autosave, three theater-specific save slots, end-turn warnings, battle hints, and a guided tutorial
 
 ## Edit the game in Markdown
@@ -27,6 +32,8 @@ The balance and campaign content live in `game-data/`:
 - `routes.md` — legal road and sea connections between settlements
 
 Keep the table headings unchanged. Add or edit table rows, save, and the development game updates automatically. A production build bundles the latest Markdown values. The content engine in `lib/game-content.ts` validates numbers, names, references, and allowed values; an invalid row stops the build with a message naming the source file and field.
+
+Players can also choose **Edit Campaign Markdown** from the theater-selection screen. The in-game workshop edits all seven files, validates the complete ruleset, stores successful changes on that device, and applies them to newly started campaigns without rebuilding the site. Shipped defaults can be restored at any time.
 
 Campaign saves are separated by theater and tied to a fingerprint of these files. When game content changes, the browser starts a clean campaign so older saved data cannot conflict with new units or cities.
 
