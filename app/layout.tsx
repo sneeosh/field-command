@@ -17,15 +17,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
-  const imageUrl = `${protocol}://${host}/og.png`;
+  const imageUrl = `${protocol}://${host}/og-campaign.png`;
   return {
     title: "Imperium: Field Command",
-    description: "Command Roman cohorts in a real-time tactical battle simulator.",
+    description: "Build cities, raise legions, and command Rome in a real-time tactical campaign.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
       title: "Imperium: Field Command",
-      description: "Command the legions in a real-time tactical battle simulator.",
-      images: [{ url: imageUrl, width: 1732, height: 907, alt: "Imperium: Field Command battle map" }],
+      description: "Build cities, raise legions, and command Rome in a real-time tactical campaign.",
+      images: [{ url: imageUrl, width: 1732, height: 907, alt: "Imperium grand campaign map and opposing armies" }],
     },
     twitter: { card: "summary_large_image", images: [imageUrl] },
   };
