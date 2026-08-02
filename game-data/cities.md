@@ -1,11 +1,17 @@
 # Campaign Cities
 
-Coordinates are percentages on the campaign map. Separate buildings and starter unit keys with commas. Use `none` for an empty list.
+Coordinates are percentages inside the theater map projection. `owner` uses the theater's player/enemy side key.
 
-| id | name | region | owner | population | baseIncome | defense | enemyPower | x | y | buildings | army |
-| ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| 1 | Rome | Latium | rome | 238000 | 720 | 55 | 0 | 51 | 45 | Forum, Barracks, Market, Stables | hastati, principes, velites, equites, triarii |
-| 2 | Capua | Campania | rome | 42000 | 320 | 28 | 0 | 63 | 52 | Forum | none |
-| 3 | Tarentum | Magna Graecia | rome | 31000 | 280 | 24 | 0 | 85 | 57 | Forum, Market | none |
-| 4 | Syracuse | Sicilia | carthage | 55000 | 450 | 42 | 460 | 71 | 85 | Forum, Walls, Market | none |
-| 5 | Caralis | Sardinia | carthage | 26000 | 300 | 35 | 390 | 27 | 67 | Forum, Walls | none |
+| id | theater | name | region | owner | population | baseIncome | defense | enemyPower | x | y | buildings | army |
+| ---: | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| 1 | italy | Rome | Latium | rome | 238000 | 720 | 55 | 0 | 51 | 45 | Forum, Barracks, Market, Stables | hastati, principes, velites, equites, triarii |
+| 2 | italy | Capua | Campania | rome | 42000 | 320 | 28 | 0 | 63 | 52 | Forum | none |
+| 3 | italy | Tarentum | Magna Graecia | rome | 31000 | 280 | 24 | 0 | 85 | 57 | Forum, Market | none |
+| 4 | italy | Syracuse | Sicilia | carthage | 55000 | 450 | 42 | 460 | 71 | 85 | Forum, Walls, Market | none |
+| 5 | italy | Caralis | Sardinia | carthage | 26000 | 300 | 35 | 390 | 27 | 67 | Forum, Walls | none |
+| 101 | greece | Pella | Macedonia | rome | 72000 | 510 | 44 | 0 | 34 | 21 | Forum, Barracks, Stables | pezhetairoi, hypaspists, peltasts, companions |
+| 102 | greece | Larissa | Thessaly | rome | 39000 | 340 | 30 | 0 | 33 | 34 | Forum, Market | none |
+| 103 | greece | Athens | Attica | carthage | 118000 | 680 | 48 | 520 | 44 | 54 | Forum, Walls, Market | none |
+| 104 | greece | Corinth | Peloponnese | carthage | 56000 | 430 | 45 | 440 | 37 | 54 | Forum, Walls, Market | none |
+| 105 | greece | Sparta | Laconia | carthage | 34000 | 320 | 38 | 410 | 33 | 64 | Forum, Barracks | none |
+| 106 | greece | Rhodes | Dodecanese | carthage | 46000 | 520 | 36 | 380 | 81 | 71 | Forum, Walls, Market | none |

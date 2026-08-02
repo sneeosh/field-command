@@ -1,12 +1,17 @@
 # Unit Roster
 
-Edit this table to rebalance units. `key` must stay unique. Set `recruitable` or `starter` to `yes`/`no`.
+Edit this table to rebalance units. `key` must stay unique. `theater` controls which campaign can recruit the unit.
 
-| key | name | kind | men | cost | upkeep | requires | recruitable | starter | morale | attack | range | speed | note |
-| --- | --- | --- | ---: | ---: | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
-| hastati | Hastati | Infantry | 120 | 700 | 90 | Barracks | yes | yes | 92 | 1.05 | 6.4 | 0.86 | Reliable swordsmen |
-| principes | Principes | Infantry | 112 | 850 | 100 | Barracks | no | yes | 96 | 1.12 | 6.4 | 0.82 | Experienced heavy infantry |
-| velites | Velites | Archers | 80 | 500 | 60 | none | yes | yes | 84 | 0.70 | 20 | 0.72 | Mobile skirmishers |
-| equites | Equites | Cavalry | 48 | 1100 | 150 | Stables | yes | yes | 90 | 1.05 | 6.4 | 1.20 | Fast shock cavalry |
-| triarii | Triarii | Spears | 72 | 950 | 110 | Barracks | yes | yes | 100 | 1.00 | 6.4 | 0.78 | Veteran anti-cavalry |
+| key | theater | name | kind | men | cost | upkeep | requires | recruitable | starter | morale | attack | range | speed | note |
+| --- | --- | --- | --- | ---: | ---: | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- |
+| hastati | italy | Hastati | Infantry | 120 | 700 | 90 | Barracks | yes | yes | 92 | 1.05 | 6.4 | 0.86 | Reliable swordsmen |
+| principes | italy | Principes | Infantry | 112 | 850 | 100 | Barracks | no | yes | 96 | 1.12 | 6.4 | 0.82 | Experienced heavy infantry |
+| velites | italy | Velites | Archers | 80 | 500 | 60 | none | yes | yes | 84 | 0.70 | 20 | 0.72 | Mobile skirmishers |
+| equites | italy | Equites | Cavalry | 48 | 1100 | 150 | Stables | yes | yes | 90 | 1.05 | 6.4 | 1.20 | Fast shock cavalry |
+| triarii | italy | Triarii | Spears | 72 | 950 | 110 | Barracks | yes | yes | 100 | 1.00 | 6.4 | 0.78 | Veteran anti-cavalry |
+| pezhetairoi | greece | Pezhetairoi | Spears | 128 | 850 | 105 | Barracks | yes | yes | 94 | 1.08 | 7.2 | 0.72 | Macedonian pike phalanx |
+| hypaspists | greece | Hypaspists | Infantry | 96 | 1050 | 135 | Barracks | yes | yes | 100 | 1.22 | 6.4 | 0.92 | Elite shield bearers |
+| peltasts | greece | Peltasts | Archers | 90 | 550 | 65 | none | yes | yes | 86 | 0.76 | 18 | 0.82 | Agile javelin skirmishers |
+| companions | greece | Companion Cavalry | Cavalry | 52 | 1250 | 170 | Stables | yes | yes | 98 | 1.20 | 6.4 | 1.28 | Elite shock cavalry |
+| hoplites | greece | Citizen Hoplites | Spears | 110 | 720 | 90 | Barracks | yes | no | 92 | 1.04 | 6.8 | 0.70 | Steady defensive infantry |
 
