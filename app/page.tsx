@@ -128,9 +128,12 @@ function CampaignView({ campaign, city, income, upkeep, notice, onSelect, onRecr
       <section className="campaign-center">
         <div className="campaign-map" role="group" aria-label="Campaign map of Roman territories">
           <div className="sea sea-one">MARE TYRRHENUM</div><div className="sea sea-two">MARE ADRIATICUM</div><div className="sea sea-three">MARE IONIUM</div>
-          <div className="italy-land" /><div className="sicily-land" /><div className="sardinia-land" /><div className="corsica-land" /><div className="alps">ALPES</div><div className="apennines" />
-          <div className="map-route r1" /><div className="map-route r2" /><div className="map-route r3" /><div className="map-route r4" />
-          {campaign.cities.map((item) => <button key={item.id} onClick={() => onSelect(item.id)} className={`city-node ${item.owner} ${item.id === city.id ? "selected" : ""}`} style={{ left: `${item.x}%`, top: `${item.y}%` }}><i>{item.owner === "rome" ? "Ⅰ" : "◆"}</i><strong>{item.name}</strong><small>{item.owner === "rome" ? `${item.army.length} cohorts` : `${item.enemyPower + item.defense} power`}</small></button>)}
+          <div className="geo-frame">
+            <img src="/italy-map.png" alt="" aria-hidden="true" />
+            <div className="alps">ALPES</div><div className="apennines" />
+            <div className="map-route r1" /><div className="map-route r2" /><div className="map-route r3" /><div className="map-route r4" />
+            {campaign.cities.map((item) => <button key={item.id} onClick={() => onSelect(item.id)} className={`city-node ${item.owner} ${item.id === city.id ? "selected" : ""}`} style={{ left: `${item.x}%`, top: `${item.y}%` }}><i>{item.owner === "rome" ? "Ⅰ" : "◆"}</i><strong>{item.name}</strong><small>{item.owner === "rome" ? `${item.army.length} cohorts` : `${item.enemyPower + item.defense} power`}</small></button>)}
+          </div>
           <div className="map-legend"><span><i className="roman-key" /> Roman</span><span><i className="enemy-key" /> Carthage</span><span>··· Roads</span></div>
         </div>
         <div className="campaign-notice"><span>✦</span><strong>{notice}</strong>{city.owner === "rome" && nearestEnemy && city.army.length > 0 && <button onClick={() => onBattle(nearestEnemy)}>MARCH ON {nearestEnemy.name.toUpperCase()} →</button>}</div>
