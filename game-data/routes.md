@@ -13,3 +13,10 @@ Routes define legal one-turn movement between cities. Add a row to connect two s
 | greece | 104 | 103 | road |
 | greece | 104 | 105 | road |
 | greece | 103 | 106 | sea |
+| japan | 201 | 202 | road |
+| japan | 202 | 203 | road |
+| japan | 203 | 204 | road |
+| japan | 202 | 205 | road |
+| japan | 205 | 206 | road |
+| japan | 205 | 207 | road |
+| japan | 204 | 206 | sea |

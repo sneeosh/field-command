@@ -15,3 +15,10 @@ Coordinates are percentages inside the theater map projection. `owner` uses the 
 | 104 | greece | Corinth | Peloponnese | carthage | 56000 | 430 | 45 | 440 | 37 | 54 | Forum, Walls, Market | none |
 | 105 | greece | Sparta | Laconia | carthage | 34000 | 320 | 38 | 410 | 33 | 64 | Forum, Barracks | none |
 | 106 | greece | Rhodes | Dodecanese | carthage | 46000 | 520 | 36 | 380 | 81 | 71 | Forum, Walls, Market | none |
+| 201 | japan | Owari | Owari Province | rome | 68000 | 500 | 42 | 0 | 45 | 64 | Forum, Barracks, Stables | yari-ashigaru, katana-samurai, yumi-ashigaru, mounted-samurai |
+| 202 | japan | Mino | Mino Province | rome | 47000 | 360 | 32 | 0 | 50 | 56 | Forum, Market | none |
+| 203 | japan | Kyoto | Yamashiro | carthage | 124000 | 720 | 52 | 560 | 31 | 68 | Forum, Walls, Market | none |
+| 204 | japan | Osaka | Settsu | carthage | 82000 | 590 | 46 | 490 | 29 | 74 | Forum, Walls, Market | none |
+| 205 | japan | Kai | Kai Province | carthage | 44000 | 390 | 44 | 470 | 69 | 55 | Forum, Barracks | none |
+| 206 | japan | Odawara | Sagami | carthage | 51000 | 460 | 48 | 510 | 77 | 64 | Forum, Walls | none |
+| 207 | japan | Kasugayama | Echigo | carthage | 38000 | 350 | 40 | 430 | 64 | 34 | Forum, Barracks | none |

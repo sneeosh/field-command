@@ -35,7 +35,7 @@ function num(row:Row,key:string,source:string){const value=Number(row[key]);if(!
 function one<T extends string>(value:string,choices:readonly T[],source:string,field:string):T{if(!choices.includes(value as T))throw new Error(`${source}: '${value}' is not a valid ${field}.`);return value as T}
 function list(value:string){return value.toLowerCase()==="none"?[]:value.split(",").map((item)=>item.trim()).filter(Boolean)}
 function yes(value:string){return value.toLowerCase()==="yes"}
-function fingerprint(content:MarkdownContent){const all="imperium-engine-v5\n"+Object.values(content).join("\n");return Array.from(all).reduce((hash,character)=>Math.imul(hash^character.charCodeAt(0),16777619),2166136261).toString(36)}
+function fingerprint(content:MarkdownContent){const all="imperium-engine-v6\n"+Object.values(content).join("\n");return Array.from(all).reduce((hash,character)=>Math.imul(hash^character.charCodeAt(0),16777619),2166136261).toString(36)}
 
 const kinds=["Infantry","Spears","Cavalry","Archers"] as const,buildingNames=["Forum","Barracks","Market","Stables","Walls"] as const,sides=["rome","carthage"] as const;
 
