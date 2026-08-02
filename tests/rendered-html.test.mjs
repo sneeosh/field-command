@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   battleObjective,
+  battlefieldFeatureAt,
   campaignMilestone,
   claimMandateReward,
   deterministicIndex,
@@ -63,4 +64,13 @@ test("battle objectives and deterministic events are stable",()=>{
   assert.equal(battleObjective(false,false),"Rout");
   assert.equal(deterministicIndex(1560,3),deterministicIndex(1560,3));
   assert.ok(deterministicIndex(1560,3)>=0&&deterministicIndex(1560,3)<3);
+});
+
+test("battlefield terrain recognizes cover, crossings, and open ground",()=>{
+  assert.equal(battlefieldFeatureAt("Hills",30,25),"Hill");
+  assert.equal(battlefieldFeatureAt("Forest",31,68),"Forest");
+  assert.equal(battlefieldFeatureAt("River",51,27),"Bridge");
+  assert.equal(battlefieldFeatureAt("River",51,50),"River");
+  assert.equal(battlefieldFeatureAt("Plains",50,80),"Road");
+  assert.equal(battlefieldFeatureAt("Plains",50,50),"Open");
 });

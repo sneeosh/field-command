@@ -1,5 +1,7 @@
 export type VictoryPath = "Conquest"|"Dominion";
 export type BattleObjective = "Rout"|"Hold"|"Breakthrough";
+export type BattlefieldTerrain = "Plains"|"Hills"|"Forest"|"River";
+export type BattlefieldFeature = "Open"|"Road"|"Hill"|"Forest"|"River"|"Bridge";
 
 export type CampaignMilestoneInput = {
   victoryPath:VictoryPath;
@@ -45,4 +47,17 @@ export function deterministicIndex(seed:number,length:number){
   if(length<=0)return 0;
   const mixed=Math.imul(seed^0x9e3779b9,2654435761)>>>0;
   return mixed%length;
+}
+
+function insideEllipse(x:number,y:number,cx:number,cy:number,rx:number,ry:number){
+  return ((x-cx)/rx)**2+((y-cy)/ry)**2<=1;
+}
+
+/** Returns the tactical feature under a unit using the same percentage geometry as the field UI. */
+export function battlefieldFeatureAt(terrain:BattlefieldTerrain,x:number,y:number):BattlefieldFeature{
+  if(terrain==="River"&&x>=45&&x<=57)return y>=20&&y<=34||y>=64&&y<=78?"Bridge":"River";
+  if(terrain==="Hills"&&(insideEllipse(x,y,30,25,24,17)||insideEllipse(x,y,67,72,26,18)))return "Hill";
+  if(terrain==="Forest"&&(insideEllipse(x,y,31,68,18,25)||insideEllipse(x,y,65,27,18,22)))return "Forest";
+  if(y>=76&&y<=86)return "Road";
+  return "Open";
 }
