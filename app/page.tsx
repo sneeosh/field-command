@@ -83,10 +83,53 @@ export default function Home(){
   return <CampaignView campaign={campaign} city={selectedCity} army={selectedArmy} income={income} upkeep={upkeep} notice={notice} menu={menu} hints={hints} onMenu={()=>setMenu(!menu)} onHints={()=>setHints(!hints)} onCity={chooseCity} onArmy={chooseArmy} onMarch={orderMarch} onRecruit={queueRecruit} onBuild={queueBuilding} onRaise={raiseArmy} onTransfer={transfer} onSplit={splitArmy} onMerge={mergeArmies} onStance={setStance} onSiege={siegeAction} onDiplomacy={diplomacy} onDecision={chooseDecision} onVictory={chooseVictory} onEnd={requestEndTurn} confirmEnd={confirmEnd} onSave={saveSlot} onLoad={loadSlot} onReset={reset} onTutorial={()=>setCampaign((old)=>({...old,tutorial:Math.min(tutorials.length,old.tutorial+1)}))}/>;
 }
 
+type ParsedMarkdownTable = { lines:string[];start:number;end:number;headers:string[];rows:string[][] };
+
+function tableCells(line:string){return line.trim().replace(/^\|/,"").replace(/\|$/,"").split("|").map((cell)=>cell.trim())}
+
+function parseMarkdownTable(value:string):ParsedMarkdownTable|null{
+  const lines=value.split(/\r?\n/),start=lines.findIndex((line,index)=>line.trim().startsWith("|")&&index+1<lines.length&&tableCells(lines[index+1]).every((cell)=>/^:?-{3,}:?$/.test(cell)));
+  if(start<0)return null;
+  const headers=tableCells(lines[start]);
+  let end=start+2;
+  while(end<lines.length&&lines[end].trim().startsWith("|")&&lines[end].trim().endsWith("|"))end++;
+  const rows=lines.slice(start+2,end).map((line)=>{const row=tableCells(line).slice(0,headers.length);while(row.length<headers.length)row.push("");return row});
+  return {lines,start,end,headers,rows};
+}
+
+function serializeMarkdownTable(table:ParsedMarkdownTable,rows=table.rows){
+  const clean=rows.map((row)=>table.headers.map((_,index)=>(row[index]??"").replace(/\|/g,"/").trim()));
+  const widths=table.headers.map((header,index)=>Math.max(3,header.length,...clean.map((row)=>row[index].length)));
+  const line=(cells:string[])=>`| ${cells.map((cell,index)=>cell.padEnd(widths[index])).join(" | ")} |`;
+  const formatted=[line(table.headers),line(widths.map((width)=>"-".repeat(width))),...clean.map(line)];
+  return [...table.lines.slice(0,table.start),...formatted,...table.lines.slice(table.end)].join("\n");
+}
+
+function formatMarkdownTable(value:string){const table=parseMarkdownTable(value);return table?serializeMarkdownTable(table):value}
+
+function MarkdownTableEditor({value,onChange}:{value:string;onChange:(value:string)=>void}){
+  const table=parseMarkdownTable(value);
+  if(!table)return <div className="markdown-grid-empty"><strong>No Markdown table found</strong><span>Switch to Raw Markdown to edit this file.</span></div>;
+  const columnWidths=table.headers.map((header,columnIndex)=>Math.min(300,Math.max(112,Math.max(header.length,...table.rows.map((row)=>(row[columnIndex]??"").length))*7+28)));
+  function update(rowIndex:number,columnIndex:number,next:string){if(!table)return;const rows=table.rows.map((row)=>[...row]);rows[rowIndex][columnIndex]=next;onChange(serializeMarkdownTable(table,rows))}
+  function remove(rowIndex:number){if(!table)return;onChange(serializeMarkdownTable(table,table.rows.filter((_,index)=>index!==rowIndex)))}
+  function add(){if(!table)return;onChange(serializeMarkdownTable(table,[...table.rows,table.headers.map(()=>"")]))}
+  return <div className="markdown-grid-editor">
+    <div className="markdown-grid-summary"><span><b>{table.rows.length}</b> rows</span><span><b>{table.headers.length}</b> columns</span><em>Edit any cell directly. Scroll sideways for additional fields.</em></div>
+    <div className="markdown-grid-scroll"><table className="markdown-grid">
+      <colgroup><col style={{width:38}}/>{columnWidths.map((width,index)=><col key={index} style={{width}}/>)}<col style={{width:48}}/></colgroup>
+      <thead><tr><th className="row-number">#</th>{table.headers.map((header)=><th key={header}>{header}</th>)}<th className="row-actions">ROW</th></tr></thead>
+      <tbody>{table.rows.map((row,rowIndex)=><tr key={rowIndex}><th className="row-number">{rowIndex+1}</th>{table.headers.map((header,columnIndex)=><td key={`${header}-${columnIndex}`}><input aria-label={`${header}, row ${rowIndex+1}`} value={row[columnIndex]??""} onChange={(event)=>update(rowIndex,columnIndex,event.target.value)}/></td>)}<td className="row-actions"><button aria-label={`Delete row ${rowIndex+1}`} title="Delete row" onClick={()=>remove(rowIndex)}>×</button></td></tr>)}</tbody>
+    </table></div>
+    <div className="markdown-grid-toolbar"><button onClick={add}>+ ADD ROW</button><span>Changes remain Markdown and are checked when you validate.</span></div>
+  </div>
+}
+
 function TheaterSelect({markdown,onApply,onRestore,onStart}:{markdown:MarkdownContent;onApply:(content:MarkdownContent)=>string|null;onRestore:()=>void;onStart:(key:string)=>void}){
-  const [editing,setEditing]=useState(false),[file,setFile]=useState<MarkdownKey>("units"),[draft,setDraft]=useState<MarkdownContent>({...markdown}),[status,setStatus]=useState("Edits are stored on this device and applied to every new campaign.");
+  const [editing,setEditing]=useState(false),[file,setFile]=useState<MarkdownKey>("units"),[draft,setDraft]=useState<MarkdownContent>({...markdown}),[status,setStatus]=useState("Edits are stored on this device and applied to every new campaign."),[mode,setMode]=useState<"table"|"raw">("table");
   function apply(){const error=onApply(draft);setStatus(error?`Validation failed: ${error}`:"Validated and applied. New campaigns will use these rules.")}
-  return <main className="theater-select"><header><div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>THEATER COMMAND</small></div></div><p>Choose a campaign or rewrite its data first. Geography, factions, cities, routes, armies, economy, combat rules, and AI behavior are loaded from editable Markdown.</p><button className="open-workshop" onClick={()=>setEditing(!editing)}>{editing?"CLOSE DATA WORKSHOP":"EDIT CAMPAIGN MARKDOWN"}</button></header>{editing?<section className="markdown-workshop"><aside>{(Object.keys(markdownLabels) as MarkdownKey[]).map((key)=><button key={key} className={file===key?"active":""} onClick={()=>setFile(key)}>{markdownLabels[key]}</button>)}</aside><div><header><span><small>GAME DATA</small><strong>{markdownLabels[file]}.md</strong></span><div><button onClick={()=>{onRestore();setDraft({...markdownDefaults});setStatus("Shipped Markdown restored.")}}>Restore defaults</button><button className="apply" onClick={apply}>Validate & apply</button></div></header><textarea spellCheck={false} value={draft[file]} onChange={(event)=>setDraft({...draft,[file]:event.target.value})}/><footer className={status.startsWith("Validation failed")?"error":""}>{status}</footer></div></section>:<section className="theater-cards">{theaterDefinitions.map((t)=>{const player=factionDefinition(t.playerFaction),enemy=factionDefinition(t.enemyFaction);return <article key={t.key} style={{"--theater-color":player.color,"--theater-enemy":enemy.color} as CSSProperties}><img src={t.map} alt={`${t.name} campaign map`}/><div><small>{t.subtitle}</small><h2>{t.name}</h2><p>{t.description}</p><dl><div><dt>COMMAND</dt><dd>{player.name}</dd></div><div><dt>OPPOSED BY</dt><dd>{enemy.name}</dd></div><div><dt>MANDATE</dt><dd>{t.turnLimit} turns</dd></div></dl><button onClick={()=>onStart(t.key)}>BEGIN {t.name.toUpperCase()} →</button></div></article>})}</section>}<footer>THEATER PACKS · LIVE MARKDOWN WORKSHOP · GRAND STRATEGY</footer></main>
+  function setView(next:"table"|"raw"){if(next==="raw")setDraft((old)=>({...old,[file]:formatMarkdownTable(old[file])}));setMode(next)}
+  return <main className="theater-select"><header><div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>THEATER COMMAND</small></div></div><p>Choose a campaign or rewrite its data first. Geography, factions, cities, routes, armies, economy, combat rules, and AI behavior are loaded from editable Markdown.</p><button className="open-workshop" onClick={()=>setEditing(!editing)}>{editing?"CLOSE DATA WORKSHOP":"EDIT CAMPAIGN MARKDOWN"}</button></header>{editing?<section className="markdown-workshop"><aside>{(Object.keys(markdownLabels) as MarkdownKey[]).map((key)=><button key={key} className={file===key?"active":""} onClick={()=>setFile(key)}>{markdownLabels[key]}</button>)}</aside><div><header><span><small>GAME DATA</small><strong>{markdownLabels[file]}.md</strong></span><div className="workshop-header-actions"><div className="workshop-view-toggle"><button className={mode==="table"?"active":""} onClick={()=>setView("table")}>Table</button><button className={mode==="raw"?"active":""} onClick={()=>setView("raw")}>Markdown</button></div><button onClick={()=>{onRestore();setDraft({...markdownDefaults});setStatus("Shipped Markdown restored.")}}>Restore defaults</button><button className="apply" onClick={apply}>Validate & apply</button></div></header>{mode==="table"?<MarkdownTableEditor value={draft[file]} onChange={(value)=>setDraft({...draft,[file]:value})}/>:<textarea spellCheck={false} aria-label={`${markdownLabels[file]} Markdown`} value={draft[file]} onChange={(event)=>setDraft({...draft,[file]:event.target.value})}/>}<footer className={status.startsWith("Validation failed")?"error":""}>{status}</footer></div></section>:<section className="theater-cards">{theaterDefinitions.map((t)=>{const player=factionDefinition(t.playerFaction),enemy=factionDefinition(t.enemyFaction);return <article key={t.key} style={{"--theater-color":player.color,"--theater-enemy":enemy.color} as CSSProperties}><img src={t.map} alt={`${t.name} campaign map`}/><div><small>{t.subtitle}</small><h2>{t.name}</h2><p>{t.description}</p><dl><div><dt>COMMAND</dt><dd>{player.name}</dd></div><div><dt>OPPOSED BY</dt><dd>{enemy.name}</dd></div><div><dt>MANDATE</dt><dd>{t.turnLimit} turns</dd></div></dl><button onClick={()=>onStart(t.key)}>BEGIN {t.name.toUpperCase()} →</button></div></article>})}</section>}<footer>THEATER PACKS · LIVE MARKDOWN WORKSHOP · GRAND STRATEGY</footer></main>
 }
 
 function CampaignView(p:{campaign:Campaign;city:City;army:Army|null;income:number;upkeep:number;notice:string;menu:boolean;hints:boolean;confirmEnd:boolean;onMenu:()=>void;onHints:()=>void;onCity:(id:number)=>void;onArmy:(id:number)=>void;onMarch:(id:number)=>void;onRecruit:(key:string)=>void;onBuild:(name:BuildingName)=>void;onRaise:()=>void;onTransfer:(d:"toArmy"|"toGarrison")=>void;onSplit:()=>void;onMerge:()=>void;onStance:(s:ArmyStance)=>void;onSiege:(a:"assault"|"negotiate"|"withdraw")=>void;onDiplomacy:(key:string,a:"gift"|"trade"|"alliance")=>void;onDecision:(c:"left"|"right")=>void;onVictory:(v:"Conquest"|"Dominion")=>void;onEnd:()=>void;onSave:(s:number)=>void;onLoad:(s:number)=>void;onReset:()=>void;onTutorial:()=>void}){
