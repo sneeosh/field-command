@@ -1,6 +1,17 @@
 # Imperium: Grand Campaign
 
-A browser strategy prototype with a turn-based city and economy layer connected to real-time tactical battles.
+A browser strategy game with a turn-based city, economy, army-movement, and AI campaign connected to real-time tactical battles.
+
+## Playable systems
+
+- Independent field armies with road movement, splitting, merging, garrisoning, and reinforcement
+- Turn-based recruitment, construction, replenishment, population costs, income, and upkeep
+- Carthaginian campaign AI that recruits, attacks, captures cities, and obeys the same economy
+- Tactical deployment with individual or Shift-selected cohort repositioning
+- Targeted attacks, formations, unit facing, flanking, fatigue, ammunition, charges, hills, roads, and walls
+- Persistent casualties and experience, pursuit, withdrawal, and city capture outcomes
+- A twenty-turn Syracuse objective, dynamic events, victory and defeat states
+- Autosave, three named save slots, end-turn warnings, battle hints, and a guided tutorial
 
 ## Edit the game in Markdown
 

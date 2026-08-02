@@ -3,236 +3,148 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildingDefinitions, cityDefinitions, contentVersion, formationAttack, formationDefense, matchup, moraleRule, unitDefinition, unitDefinitions, type BuildingName, type Formation, type Kind, type Side } from "../lib/game-content";
 
-type RosterUnit = { id: number; key: string; name: string; kind: Kind; men: number; maxMen: number; upkeep: number };
-type City = { id: number; name: string; region: string; owner: Side; population: number; baseIncome: number; defense: number; enemyPower: number; x: number; y: number; buildings: BuildingName[]; army: RosterUnit[] };
-type Unit = RosterUnit & { side: Side; morale: number; x: number; y: number; tx: number; ty: number; facing: number; formation: Formation };
-type Campaign = { turn: number; year: number; treasury: number; cities: City[]; selectedCity: number; log: string[]; nextUnitId: number };
+type RosterUnit = { id:number; key:string; name:string; kind:Kind; men:number; maxMen:number; upkeep:number; experience:number };
+type QueueItem = { id:number; key:string; turns:number };
+type City = { id:number; name:string; region:string; owner:Side; population:number; baseIncome:number; defense:number; x:number; y:number; buildings:BuildingName[]; garrison:RosterUnit[]; recruitment:QueueItem[]; construction:{name:BuildingName;turns:number}|null };
+type Army = { id:number; name:string; side:Side; cityId:number; targetCityId:number|null; movement:number; units:RosterUnit[] };
+type Campaign = { turn:number; year:number; treasury:number; enemyTreasury:number; cities:City[]; armies:Army[]; selectedCity:number; selectedArmy:number|null; log:string[]; nextUnitId:number; nextArmyId:number; tutorial:number; result:string|null };
+type BattleUnit = RosterUnit & { side:Side; morale:number; stamina:number; ammo:number; x:number;y:number;tx:number;ty:number;facing:number;formation:Formation;attackTarget:number|null;charging:boolean };
+type BattleContext = { units:BattleUnit[]; playerArmyId:number; enemyArmyId:number|null; targetCityId:number; defensive:boolean; walls:boolean };
+type BattleOutcome = "VICTORY"|"DEFEAT"|"WITHDRAWAL";
 
-const unitCatalog = unitDefinitions.filter((unit) => unit.recruitable);
-const buildingCatalog = buildingDefinitions;
-let seededUnitId = 1;
-const seededCities: City[] = cityDefinitions.map((city) => ({ ...city, army: city.army.map((key, index) => {
-  const definition = unitDefinition(key);
-  if (!definition) throw new Error(`Unknown starter unit '${key}' in ${city.name}.`);
-  const id = seededUnitId++;
-  return { id, key, name: `${definition.name} ${romanNumeral(city.army.slice(0, index + 1).filter((item) => item === key).length)}`, kind: definition.kind, men: definition.men, maxMen: definition.men, upkeep: definition.upkeep };
-}) }));
-
-const initialCampaign: Campaign = {
-  turn: 1, year: 256, treasury: 5200, selectedCity: seededCities[0]?.id ?? 1, nextUnitId: seededUnitId + 20,
-  log: ["The Senate orders the conquest of Syracuse.", "Rome begins with 5 cohorts ready for service."],
-  cities: seededCities,
-};
-
-const formations: { name: Formation; icon: string; note: string }[] = [
-  { name: "Line", icon: "━━", note: "Balanced front" },
-  { name: "Guard", icon: "▰", note: "+30% defense" },
-  { name: "Wedge", icon: "◆", note: "+25% charge" },
+const unitsForSale=unitDefinitions.filter((u)=>u.recruitable);
+const connections:[[number,number],[number,number],[number,number],[number,number]]=[[1,2],[2,3],[3,4],[1,5]];
+const tutorials=[
+  "Welcome, Consul. Select the legion standard on the map to inspect your field army.",
+  "With an army selected, choose a connected city and order a march. Movement resolves when the turn ends.",
+  "Cities recruit into their garrison over several turns. Transfer cohorts into a field army before marching.",
+  "Construction unlocks troops, raises income, or improves siege defense. Every choice competes for treasury.",
+  "Capture Syracuse by turn 20. Carthage recruits, moves, attacks, and can take Rome if left undefended.",
 ];
 
-export default function Home() {
-  const [view, setView] = useState<"campaign" | "battle">("campaign");
-  const [campaign, setCampaign] = useState<Campaign>(initialCampaign);
-  const [battle, setBattle] = useState<{ units: Unit[]; targetCity: number; originCity: number } | null>(null);
-  const [notice, setNotice] = useState("The Republic awaits your command.");
+let seedUnit=1;
+const seededCities:City[]=cityDefinitions.map((city)=>({...city,enemyPower:undefined,army:undefined,garrison:city.army.map((key,index)=>makeRoster(key,seedUnit++,index+1)),recruitment:[],construction:null} as unknown as City));
+const rome=seededCities.find((c)=>c.name==="Rome")??seededCities[0];
+const startingRoman=rome.garrison.splice(0);
+const enemyCities=seededCities.filter((c)=>c.owner==="carthage");
+const seededArmies:Army[]=[{id:1,name:"Legio I Aquila",side:"rome",cityId:rome.id,targetCityId:null,movement:1,units:startingRoman},...enemyCities.map((city,index)=>({id:10+index,name:index?"Army of Sardinia":"Punic Army of Sicily",side:"carthage" as Side,cityId:city.id,targetCityId:null,movement:1,units:enemyRoster(city.id,index)}))];
+const initialCampaign:Campaign={turn:1,year:256,treasury:5200,enemyTreasury:4800,cities:seededCities,armies:seededArmies,selectedCity:rome.id,selectedArmy:1,log:["The Senate orders Syracuse taken within twenty turns.","Carthaginian armies are mobilizing."],nextUnitId:seedUnit+40,nextArmyId:20,tutorial:0,result:null};
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("imperium-campaign-v2");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { contentVersion?: string; campaign?: Campaign };
-        if (parsed.contentVersion === contentVersion && parsed.campaign) setCampaign(parsed.campaign);
-      } catch { /* retain a clean campaign */ }
-    }
-  }, []);
-  useEffect(() => { window.localStorage.setItem("imperium-campaign-v2", JSON.stringify({ contentVersion, campaign })); }, [campaign]);
+export default function Home(){
+  const [campaign,setCampaign]=useState<Campaign>(initialCampaign);
+  const [battle,setBattle]=useState<BattleContext|null>(null);
+  const [view,setView]=useState<"campaign"|"battle">("campaign");
+  const [notice,setNotice]=useState("Select Legio I, then choose a connected city.");
+  const [menu,setMenu]=useState(false);
+  const [confirmEnd,setConfirmEnd]=useState(false);
+  const [hints,setHints]=useState(true);
 
-  const city = campaign.cities.find((item) => item.id === campaign.selectedCity) ?? campaign.cities[0];
-  const income = campaign.cities.filter((item) => item.owner === "rome").reduce((sum, item) => sum + cityIncome(item), 0);
-  const upkeep = campaign.cities.flatMap((item) => item.army).reduce((sum, unit) => sum + unit.upkeep, 0);
+  useEffect(()=>{const raw=localStorage.getItem("imperium-campaign-v3");if(raw)try{const saved=JSON.parse(raw);if(saved.contentVersion===contentVersion)setCampaign(saved.campaign)}catch{}},[]);
+  useEffect(()=>{localStorage.setItem("imperium-campaign-v3",JSON.stringify({contentVersion,campaign}))},[campaign]);
 
-  function recruit(template: typeof unitCatalog[number]) {
-    if (city.owner !== "rome" || campaign.treasury < template.cost || (template.requires && !city.buildings.includes(template.requires))) return;
-    setCampaign((old) => ({
-      ...old, treasury: old.treasury - template.cost, nextUnitId: old.nextUnitId + 1,
-      cities: old.cities.map((item) => item.id === city.id ? { ...item, army: [...item.army, { id: old.nextUnitId, key: template.key, name: `${template.name} ${romanNumeral(item.army.filter((u) => u.key === template.key).length + 1)}`, kind: template.kind, men: template.men, maxMen: template.men, upkeep: template.upkeep }] } : item),
-      log: [`${template.name} recruited in ${city.name} for ${template.cost} denarii.`, ...old.log].slice(0, 6),
-    }));
-    setNotice(`${template.name} added to the ${city.name} field army.`);
+  const selectedCity=campaign.cities.find((c)=>c.id===campaign.selectedCity)??campaign.cities[0];
+  const selectedArmy=campaign.armies.find((a)=>a.id===campaign.selectedArmy)??null;
+  const income=sideIncome(campaign,"rome"),upkeep=sideUpkeep(campaign,"rome");
+
+  function chooseCity(id:number){
+    setCampaign((old)=>({...old,selectedCity:id}));
+    const target=campaign.cities.find((c)=>c.id===id);
+    if(selectedArmy&&target&&connected(selectedArmy.cityId,id)&&selectedArmy.cityId!==id)setNotice(`${target.name} is within one turn's march.`);
   }
-
-  function build(building: typeof buildingCatalog[number]) {
-    if (city.owner !== "rome" || campaign.treasury < building.cost || city.buildings.includes(building.name)) return;
-    setCampaign((old) => ({ ...old, treasury: old.treasury - building.cost, cities: old.cities.map((item) => item.id === city.id ? { ...item, buildings: [...item.buildings, building.name], defense: item.defense + building.defense } : item), log: [`${building.name} completed in ${city.name}.`, ...old.log].slice(0, 6) }));
-    setNotice(`${building.name} completed. Its effects apply immediately.`);
+  function chooseArmy(id:number){const army=campaign.armies.find((a)=>a.id===id);if(!army)return;setCampaign((old)=>({...old,selectedArmy:id,selectedCity:army.cityId}));setNotice(`${army.name}: ${army.units.length} cohorts ready.`)}
+  function orderMarch(cityId:number){if(!selectedArmy||selectedArmy.side!=="rome"||!connected(selectedArmy.cityId,cityId))return;setCampaign((old)=>({...old,armies:old.armies.map((a)=>a.id===selectedArmy.id?{...a,targetCityId:cityId}:a)}));setNotice(`${selectedArmy.name} will march when the turn ends.`);setConfirmEnd(false)}
+  function queueRecruit(key:string){const def=unitDefinition(key);if(!def||selectedCity.owner!=="rome"||campaign.treasury<def.cost||selectedCity.recruitment.length>=3||(def.requires&&!selectedCity.buildings.includes(def.requires)))return;setCampaign((old)=>({...old,treasury:old.treasury-def.cost,cities:old.cities.map((c)=>c.id===selectedCity.id?{...c,recruitment:[...c.recruitment,{id:old.nextUnitId,key,turns:def.kind==="Cavalry"?3:2}]}:c),nextUnitId:old.nextUnitId+1,log:[`${def.name} recruitment begun in ${selectedCity.name}.`,...old.log].slice(0,7)}));setNotice(`${def.name} will muster in ${def.kind==="Cavalry"?3:2} turns.`)}
+  function queueBuilding(name:BuildingName){const def=buildingDefinitions.find((b)=>b.name===name);if(!def||selectedCity.owner!=="rome"||campaign.treasury<def.cost||selectedCity.construction||selectedCity.buildings.includes(name))return;setCampaign((old)=>({...old,treasury:old.treasury-def.cost,cities:old.cities.map((c)=>c.id===selectedCity.id?{...c,construction:{name,turns:name==="Walls"?3:2}}:c),log:[`${name} construction begun in ${selectedCity.name}.`,...old.log].slice(0,7)}));setNotice(`${name} is now under construction.`)}
+  function raiseArmy(){if(selectedCity.owner!=="rome"||!selectedCity.garrison.length)return;setCampaign((old)=>{const id=old.nextArmyId;return{...old,nextArmyId:id+1,selectedArmy:id,armies:[...old.armies,{id,name:`Legio ${romanNumeral(id-18)}`,side:"rome",cityId:selectedCity.id,targetCityId:null,movement:1,units:selectedCity.garrison}],cities:old.cities.map((c)=>c.id===selectedCity.id?{...c,garrison:[]}:c)}});setNotice("A new field army has been raised.")}
+  function transfer(direction:"toArmy"|"toGarrison"){
+    if(!selectedArmy||selectedArmy.cityId!==selectedCity.id||selectedArmy.side!=="rome")return;
+    const source=direction==="toArmy"?selectedCity.garrison:selectedArmy.units;if(!source.length)return;const unit=source[source.length-1];
+    setCampaign((old)=>({...old,armies:old.armies.map((a)=>a.id===selectedArmy.id?{...a,units:direction==="toArmy"?[...a.units,unit]:a.units.filter((u)=>u.id!==unit.id)}:a),cities:old.cities.map((c)=>c.id===selectedCity.id?{...c,garrison:direction==="toArmy"?c.garrison.filter((u)=>u.id!==unit.id):[...c.garrison,unit]}:c)}));
   }
+  function splitArmy(){if(!selectedArmy||selectedArmy.units.length<2)return;const half=selectedArmy.units.slice(Math.ceil(selectedArmy.units.length/2));setCampaign((old)=>{const id=old.nextArmyId;return{...old,nextArmyId:id+1,armies:[...old.armies.map((a)=>a.id===selectedArmy.id?{...a,units:a.units.filter((u)=>!half.some((h)=>h.id===u.id))}:a),{id,name:`Detachment ${romanNumeral(id)}`,side:"rome",cityId:selectedArmy.cityId,targetCityId:null,movement:1,units:half}],selectedArmy:id}})}
+  function mergeArmies(){if(!selectedArmy)return;const allies=campaign.armies.filter((a)=>a.side==="rome"&&a.cityId===selectedArmy.cityId&&a.id!==selectedArmy.id);if(!allies.length)return;setCampaign((old)=>({...old,armies:old.armies.filter((a)=>!allies.some((b)=>b.id===a.id)).map((a)=>a.id===selectedArmy.id?{...a,units:[...a.units,...allies.flatMap((b)=>b.units)]}:a)}))}
 
-  function endTurn() {
-    const net = income - upkeep;
-    setCampaign((old) => ({
-      ...old, turn: old.turn + 1, year: old.turn % 4 === 0 ? old.year - 1 : old.year, treasury: Math.max(0, old.treasury + net),
-      cities: old.cities.map((item) => item.owner === "carthage" ? { ...item, enemyPower: Math.min(800, item.enemyPower + 22), population: Math.round(item.population * 1.003) } : { ...item, population: Math.round(item.population * 1.004) }),
-      log: [`Turn ${old.turn} ended: ${net >= 0 ? "+" : ""}${net} denarii net revenue.`, ...old.log].slice(0, 6),
-    }));
-    setNotice(net >= 0 ? `The treasury gained ${net} denarii.` : `Army upkeep exceeded revenue by ${Math.abs(net)} denarii.`);
-  }
+  function requestEndTurn(){const idle=campaign.armies.filter((a)=>a.side==="rome"&&!a.targetCityId).length;if(idle&&!confirmEnd){setConfirmEnd(true);setNotice(`${idle} Roman ${idle===1?"army is":"armies are"} idle. Press End Turn again to confirm.`);return}setConfirmEnd(false);const processed=processTurn(campaign);setCampaign(processed.campaign);setNotice(processed.notice);if(processed.encounter){setBattle(processed.encounter);setView("battle")}}
+  function saveSlot(slot:number){localStorage.setItem(`imperium-save-${slot}`,JSON.stringify({contentVersion,campaign,name:`Turn ${campaign.turn} · ${campaign.year} BC`}));setNotice(`Campaign saved to slot ${slot}.`)}
+  function loadSlot(slot:number){const raw=localStorage.getItem(`imperium-save-${slot}`);if(!raw){setNotice(`Save slot ${slot} is empty.`);return}try{const saved=JSON.parse(raw);if(saved.contentVersion!==contentVersion)throw new Error();setCampaign(saved.campaign);setNotice(`Save slot ${slot} loaded.`);setMenu(false)}catch{setNotice("That save belongs to an older ruleset.")}}
+  function reset(){setCampaign(cloneCampaign(initialCampaign));setBattle(null);setView("campaign");setMenu(false);setNotice("A new campaign has begun.")}
+  function resolveBattle(outcome:BattleOutcome,survivors:BattleUnit[]){if(!battle)return;const result=applyBattle(campaign,battle,outcome,survivors);setCampaign(result.campaign);setNotice(result.notice);setBattle(null);setView("campaign")}
 
-  function launchBattle(target: City) {
-    if (city.owner !== "rome" || target.owner !== "carthage" || !city.army.length) return;
-    setBattle({ units: createBattle(city.army, target.enemyPower + target.defense), targetCity: target.id, originCity: city.id });
-    setView("battle");
-  }
-
-  function resolveBattle(outcome: "VICTORY" | "DEFEAT", survivors: Unit[]) {
-    if (!battle) return;
-    const routThreshold = moraleRule("rout_threshold");
-    const romanSurvivors = survivors.filter((unit) => unit.side === "rome" && unit.men > 0 && unit.morale >= routThreshold).map(({ id, key, name, kind, men, maxMen, upkeep }) => ({ id, key, name, kind, men, maxMen, upkeep }));
-    const targetName = campaign.cities.find((item) => item.id === battle.targetCity)?.name ?? "the enemy city";
-    setCampaign((old) => ({
-      ...old,
-      treasury: outcome === "VICTORY" ? old.treasury + 850 : old.treasury,
-      selectedCity: outcome === "VICTORY" ? battle.targetCity : battle.originCity,
-      cities: old.cities.map((item) => item.id === battle.originCity ? { ...item, army: outcome === "DEFEAT" ? romanSurvivors : [] } : item.id === battle.targetCity && outcome === "VICTORY" ? { ...item, owner: "rome", enemyPower: 0, army: romanSurvivors, defense: Math.max(15, item.defense - 15) } : item),
-      log: [`${outcome === "VICTORY" ? `${targetName} captured; 850 denarii seized.` : `The army withdrew from ${targetName}.`}`, ...old.log].slice(0, 6),
-    }));
-    setNotice(outcome === "VICTORY" ? `${targetName} now answers to Rome.` : `The survivors have returned to ${city.name}.`);
-    setBattle(null); setView("campaign");
-  }
-
-  return view === "campaign" ? (
-    <CampaignView campaign={campaign} city={city} income={income} upkeep={upkeep} notice={notice} onSelect={(id) => setCampaign((old) => ({ ...old, selectedCity: id }))} onRecruit={recruit} onBuild={build} onEndTurn={endTurn} onBattle={launchBattle} />
-  ) : battle ? <BattleView key={`${battle.originCity}-${battle.targetCity}`} initialUnits={battle.units} targetName={campaign.cities.find((item) => item.id === battle.targetCity)?.name ?? "Enemy City"} onResolve={resolveBattle} onWithdraw={() => { setBattle(null); setView("campaign"); }} /> : null;
+  if(view==="battle"&&battle)return <BattleView context={battle} target={campaign.cities.find((c)=>c.id===battle.targetCityId)!} hints={hints} onResolve={resolveBattle}/>;
+  return <CampaignView campaign={campaign} city={selectedCity} army={selectedArmy} income={income} upkeep={upkeep} notice={notice} menu={menu} hints={hints} onMenu={()=>setMenu(!menu)} onHints={()=>setHints(!hints)} onCity={chooseCity} onArmy={chooseArmy} onMarch={orderMarch} onRecruit={queueRecruit} onBuild={queueBuilding} onRaise={raiseArmy} onTransfer={transfer} onSplit={splitArmy} onMerge={mergeArmies} onEnd={requestEndTurn} confirmEnd={confirmEnd} onSave={saveSlot} onLoad={loadSlot} onReset={reset} onTutorial={()=>setCampaign((old)=>({...old,tutorial:Math.min(tutorials.length,old.tutorial+1)}))}/>;
 }
 
-function CampaignView({ campaign, city, income, upkeep, notice, onSelect, onRecruit, onBuild, onEndTurn, onBattle }: { campaign: Campaign; city: City; income: number; upkeep: number; notice: string; onSelect: (id: number) => void; onRecruit: (unit: typeof unitCatalog[number]) => void; onBuild: (building: typeof buildingCatalog[number]) => void; onEndTurn: () => void; onBattle: (city: City) => void }) {
-  const nearestEnemy = campaign.cities.find((item) => item.owner === "carthage");
+function CampaignView(p:{campaign:Campaign;city:City;army:Army|null;income:number;upkeep:number;notice:string;menu:boolean;hints:boolean;confirmEnd:boolean;onMenu:()=>void;onHints:()=>void;onCity:(id:number)=>void;onArmy:(id:number)=>void;onMarch:(id:number)=>void;onRecruit:(key:string)=>void;onBuild:(name:BuildingName)=>void;onRaise:()=>void;onTransfer:(d:"toArmy"|"toGarrison")=>void;onSplit:()=>void;onMerge:()=>void;onEnd:()=>void;onSave:(s:number)=>void;onLoad:(s:number)=>void;onReset:()=>void;onTutorial:()=>void}){
+  const {campaign:c,city,army}=p;const canMarch=army&&army.side==="rome"&&army.cityId!==city.id&&connected(army.cityId,city.id);const objectiveCity=c.cities.find((x)=>x.name==="Syracuse");
   return <main className="campaign-shell">
-    <header className="topbar campaign-top">
-      <div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>GRAND CAMPAIGN</small></div></div>
-      <div className="battle-title"><strong>Roman Republic</strong><span>Consulship · {campaign.year} BC · Turn {campaign.turn}</span></div>
-      <div className="treasury"><small>TREASURY</small><strong>◉ {campaign.treasury.toLocaleString()}</strong><span className={income - upkeep >= 0 ? "positive" : "negative"}>{income - upkeep >= 0 ? "+" : ""}{income - upkeep} / turn</span><button onClick={onEndTurn}>END TURN →</button></div>
-    </header>
+    <header className="topbar campaign-top"><div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>GRAND CAMPAIGN</small></div></div><div className="battle-title"><strong>Roman Republic</strong><span>{c.year} BC · Turn {c.turn} · Objective {objectiveCity?.owner==="rome"?"Complete":`${Math.max(0,21-c.turn)} turns left`}</span></div><div className="treasury"><strong>◉ {c.treasury.toLocaleString()}</strong><span className={p.income-p.upkeep>=0?"positive":"negative"}>{p.income-p.upkeep>=0?"+":""}{p.income-p.upkeep}/turn</span><button onClick={p.onEnd}>{p.confirmEnd?"CONFIRM →":"END TURN →"}</button><button className="menu-button" onClick={p.onMenu}>☰</button></div></header>
+    {p.menu&&<div className="campaign-menu"><div><small>CAMPAIGN</small><strong>Command Tent</strong></div>{[1,2,3].map((s)=><span key={s}><button onClick={()=>p.onSave(s)}>Save {s}</button><button onClick={()=>p.onLoad(s)}>Load {s}</button></span>)}<button onClick={p.onHints}>Battle hints: {p.hints?"On":"Off"}</button><button className="danger" onClick={p.onReset}>New campaign</button></div>}
+    {c.tutorial<tutorials.length&&<div className="tutorial"><b>CONSUL'S GUIDE {c.tutorial+1}/{tutorials.length}</b><p>{tutorials[c.tutorial]}</p><button onClick={p.onTutorial}>{c.tutorial===tutorials.length-1?"Begin campaign":"Next"}</button></div>}
+    {c.result&&<div className="campaign-result"><small>THE SENATE PROCLAIMS</small><strong>{c.result}</strong><button onClick={p.onReset}>Begin new campaign</button></div>}
     <section className="campaign-body">
-      <aside className="province-panel">
-        <div className="campaign-section-title"><small>SETTLEMENT</small><strong>{city.name}</strong><span>{city.region} · {city.owner === "rome" ? "Roman Province" : "Hostile Territory"}</span></div>
-        <div className="city-stats"><div><small>POPULATION</small><strong>{city.population.toLocaleString()}</strong></div><div><small>INCOME</small><strong>+{cityIncome(city)}</strong></div><div><small>DEFENSE</small><strong>{city.defense}</strong></div></div>
-        {city.owner === "rome" ? <>
-          <h3>CONSTRUCTION</h3>
-          <div className="build-list">{buildingCatalog.map((building) => {
-            const built = city.buildings.includes(building.name); const canBuy = !built && campaign.treasury >= building.cost;
-            return <button key={building.name} disabled={!canBuy} className={built ? "built" : ""} onClick={() => onBuild(building)}><span>{buildingIcon(building.name)}</span><div><strong>{building.name}</strong><small>{built ? "Completed" : building.note}</small></div><b>{built ? "✓" : `◉ ${building.cost}`}</b></button>;
-          })}</div>
-        </> : <div className="hostile-card"><span>⚔</span><strong>HOSTILE CITY</strong><p>Estimated garrison: {city.enemyPower} soldiers. City defenses add {city.defense} strength.</p></div>}
+      <aside className="province-panel"><div className="campaign-section-title"><small>{city.owner==="rome"?"SETTLEMENT":"HOSTILE TERRITORY"}</small><strong>{city.name}</strong><span>{city.region} · {city.owner==="rome"?"Roman Province":"Carthaginian Rule"}</span></div><div className="city-stats"><div><small>POPULATION</small><strong>{city.population.toLocaleString()}</strong></div><div><small>INCOME</small><strong>+{cityIncome(city)}</strong></div><div><small>DEFENSE</small><strong>{city.defense}</strong></div></div>
+        {city.owner==="rome"?<><h3>CONSTRUCTION {city.construction&&`· ${city.construction.turns}T`}</h3><div className="build-list">{buildingDefinitions.map((b)=>{const built=city.buildings.includes(b.name),busy=!!city.construction;return <button key={b.name} disabled={built||busy||c.treasury<b.cost} className={built?"built":""} onClick={()=>p.onBuild(b.name)}><span>{b.icon}</span><div><strong>{b.name}</strong><small>{built?"Completed":city.construction?.name===b.name?`Building · ${city.construction.turns} turns`:b.note}</small></div><b>{built?"✓":`◉ ${b.cost}`}</b></button>})}</div></>:<div className="hostile-card"><span>⚔</span><strong>ENEMY STRONGHOLD</strong><p>Move an army here to begin a siege. Walls strengthen defenders during deployment and combat.</p></div>}
+        <div className="event-log"><strong>DISPATCHES</strong>{c.log.slice(0,5).map((line,i)=><p key={i}>› {line}</p>)}</div>
       </aside>
-
-      <section className="campaign-center">
-        <div className="campaign-map" role="group" aria-label="Campaign map of Roman territories">
-          <div className="sea sea-one">MARE TYRRHENUM</div><div className="sea sea-two">MARE ADRIATICUM</div><div className="sea sea-three">MARE IONIUM</div>
-          <div className="geo-frame">
-            <img src="/italy-map.png" alt="" aria-hidden="true" />
-            <div className="alps">ALPES</div><div className="apennines" />
-            <div className="map-route r1" /><div className="map-route r2" /><div className="map-route r3" /><div className="map-route r4" />
-            {campaign.cities.map((item) => <button key={item.id} onClick={() => onSelect(item.id)} className={`city-node ${item.owner} ${item.id === city.id ? "selected" : ""}`} style={{ left: `${item.x}%`, top: `${item.y}%` }}><i>{item.owner === "rome" ? "Ⅰ" : "◆"}</i><strong>{item.name}</strong><small>{item.owner === "rome" ? `${item.army.length} cohorts` : `${item.enemyPower + item.defense} power`}</small></button>)}
-          </div>
-          <div className="map-legend"><span><i className="roman-key" /> Roman</span><span><i className="enemy-key" /> Carthage</span><span>··· Roads</span></div>
-        </div>
-        <div className="campaign-notice"><span>✦</span><strong>{notice}</strong>{city.owner === "rome" && nearestEnemy && city.army.length > 0 && <button onClick={() => onBattle(nearestEnemy)}>MARCH ON {nearestEnemy.name.toUpperCase()} →</button>}</div>
-      </section>
-
-      <aside className="army-panel">
-        <div className="campaign-section-title army-title"><small>FIELD ARMY</small><strong>{city.owner === "rome" ? `Legio ${romanNumeral(city.id)}` : "Enemy Garrison"}</strong><span>{city.army.reduce((sum, unit) => sum + unit.men, 0)} soldiers · {city.army.reduce((sum, unit) => sum + unit.upkeep, 0)} upkeep</span></div>
-        {city.owner === "rome" && <>
-          <div className="roster">{city.army.length ? city.army.map((unit) => <div key={unit.id} className="roster-unit"><span>{unitIcon(unit.kind)}</span><div><strong>{unit.name}</strong><small>{unit.kind} · {unit.men}/{unit.maxMen} men</small><i><b style={{ width: `${unit.men / unit.maxMen * 100}%` }} /></i></div><em>◉ {unit.upkeep}</em></div>) : <p className="empty-army">No field army stationed here.</p>}</div>
-          <h3>RECRUITMENT</h3>
-          <div className="recruit-list">{unitCatalog.map((unit) => {
-            const locked = !!unit.requires && !city.buildings.includes(unit.requires); const poor = campaign.treasury < unit.cost;
-            return <button key={unit.name} disabled={locked || poor} onClick={() => onRecruit(unit)}><span>{unitIcon(unit.kind)}</span><div><strong>{unit.name}</strong><small>{locked ? `Requires ${unit.requires}` : `${unit.men} men · ${unit.note}`}</small></div><b>◉ {unit.cost}</b></button>;
-          })}</div>
-        </>}
-        <div className="ledger"><strong>TURN LEDGER</strong><p><span>City revenue</span><b>+{income}</b></p><p><span>Army upkeep</span><b>−{upkeep}</b></p><p className="net"><span>Net income</span><b>{income - upkeep >= 0 ? "+" : ""}{income - upkeep}</b></p></div>
+      <section className="campaign-center"><div className="campaign-map"><div className="sea sea-one">MARE TYRRHENUM</div><div className="sea sea-two">MARE ADRIATICUM</div><div className="sea sea-three">MARE IONIUM</div><div className="geo-frame"><img src="/italy-map.png" alt="" aria-hidden="true"/><div className="alps">ALPES</div><div className="apennines"/><div className="map-route r1"/><div className="map-route r2"/><div className="map-route r3"/><div className="map-route r4"/>
+        {c.cities.map((x)=><button key={x.id} className={`city-node ${x.owner} ${x.id===city.id?"selected":""}`} style={{left:`${x.x}%`,top:`${x.y}%`}} onClick={()=>p.onCity(x.id)}><i>{x.owner==="rome"?"Ⅰ":"◆"}</i><strong>{x.name}</strong><small>{x.garrison.length} garrison · {x.defense} def</small></button>)}
+        {c.armies.map((a)=>{const loc=c.cities.find((x)=>x.id===a.cityId)!;return <button key={a.id} className={`army-token ${a.side} ${a.id===army?.id?"selected":""}`} style={{left:`calc(${loc.x}% + ${a.side==="rome"?-24:24}px)`,top:`calc(${loc.y}% - 25px)`}} onClick={()=>p.onArmy(a.id)}><b>{a.side==="rome"?"⚑":"♜"}</b><span>{a.units.length}</span>{a.targetCityId&&<em>→</em>}</button>})}
+      </div><div className="map-legend"><span><i className="roman-key"/>Roman</span><span><i className="enemy-key"/>Carthage</span><span>··· Roads</span></div></div><div className="campaign-notice"><span>✦</span><strong>{p.notice}</strong>{canMarch&&<button onClick={()=>p.onMarch(city.id)}>MARCH TO {city.name.toUpperCase()} →</button>}</div></section>
+      <aside className="army-panel"><div className="campaign-section-title army-title"><small>{army?"SELECTED ARMY":"CITY GARRISON"}</small><strong>{army?.name??`${city.name} Garrison`}</strong><span>{(army?.units??city.garrison).reduce((s,u)=>s+u.men,0)} soldiers · {army?.targetCityId?"Marching":"Ready"}</span></div>
+        <div className="roster">{(army?.units??city.garrison).map((u)=><div className="roster-unit" key={u.id}><span>{unitIcon(u.kind)}</span><div><strong>{u.name} {u.experience?`★${u.experience}`:""}</strong><small>{u.kind} · {u.men}/{u.maxMen}</small><i><b style={{width:`${u.men/u.maxMen*100}%`}}/></i></div><em>◉{u.upkeep}</em></div>)}{!(army?.units??city.garrison).length&&<p className="empty-army">No cohorts present.</p>}</div>
+        {army&&army.side==="rome"&&<div className="army-actions"><button onClick={()=>p.onTransfer("toGarrison")} disabled={army.cityId!==city.id||!army.units.length}>Garrison unit</button><button onClick={()=>p.onTransfer("toArmy")} disabled={army.cityId!==city.id||!city.garrison.length}>Reinforce</button><button onClick={p.onSplit} disabled={army.units.length<2}>Split</button><button onClick={p.onMerge}>Merge</button></div>}
+        {!army&&city.owner==="rome"&&city.garrison.length>0&&<button className="raise-army" onClick={p.onRaise}>RAISE FIELD ARMY</button>}
+        {city.owner==="rome"&&<><h3>RECRUITMENT · {city.recruitment.length}/3</h3>{city.recruitment.map((q)=><div className="queue" key={q.id}><span>{unitDefinition(q.key)?.name}</span><b>{q.turns} turns</b></div>)}<div className="recruit-list">{unitsForSale.map((u)=>{const locked=!!u.requires&&!city.buildings.includes(u.requires);return <button key={u.key} disabled={locked||c.treasury<u.cost||city.recruitment.length>=3} onClick={()=>p.onRecruit(u.key)}><span>{unitIcon(u.kind)}</span><div><strong>{u.name}</strong><small>{locked?`Requires ${u.requires}`:`${u.men} men · 2–3 turns`}</small></div><b>◉{u.cost}</b></button>})}</div></>}
+        <div className="objective"><strong>PRIMARY OBJECTIVE</strong><p className={objectiveCity?.owner==="rome"?"done":""}>Capture Syracuse by turn 20</p><small>Reward: 2,000 denarii · Senate victory</small></div><div className="ledger"><p><span>Revenue</span><b>+{p.income}</b></p><p><span>Upkeep</span><b>−{p.upkeep}</b></p><p className="net"><span>Net</span><b>{p.income-p.upkeep>=0?"+":""}{p.income-p.upkeep}</b></p></div>
       </aside>
-    </section>
-    <footer><span>CAMPAIGN ENGINE · BUILD II</span><p>“An empire is not built in a day.”</p><span>{campaign.cities.filter((item) => item.owner === "rome").length} OF {campaign.cities.length} CITIES UNDER ROMAN RULE</span></footer>
-  </main>;
+    </section><footer><span>CAMPAIGN ENGINE · BUILD III</span><p>“Build. March. Conquer.”</p><span>{c.cities.filter((x)=>x.owner==="rome").length}/{c.cities.length} CITIES · CARTHAGE ◉{c.enemyTreasury}</span></footer>
+  </main>
 }
 
-function BattleView({ initialUnits, targetName, onResolve, onWithdraw }: { initialUnits: Unit[]; targetName: string; onResolve: (result: "VICTORY" | "DEFEAT", survivors: Unit[]) => void; onWithdraw: () => void }) {
-  const [units, setUnits] = useState(initialUnits);
-  const [selected, setSelected] = useState<number[]>(initialUnits.filter((unit) => unit.side === "rome").slice(0, 1).map((unit) => unit.id));
-  const [paused, setPaused] = useState(true); const [speed, setSpeed] = useState(1); const [elapsed, setElapsed] = useState(0); const [message, setMessage] = useState("Deploy your army, then begin the battle.");
-  const fieldRef = useRef<HTMLDivElement>(null);
-  const routThreshold = moraleRule("rout_threshold");
-  const activeRomans = units.filter((u) => u.side === "rome" && u.men > 0 && u.morale >= routThreshold);
-  const activeEnemies = units.filter((u) => u.side === "carthage" && u.men > 0 && u.morale >= routThreshold);
-  const romanStrength = activeRomans.reduce((sum, u) => sum + u.men, 0); const enemyStrength = activeEnemies.reduce((sum, u) => sum + u.men, 0);
-  const result: "VICTORY" | "DEFEAT" | null = activeRomans.length === 0 ? "DEFEAT" : activeEnemies.length === 0 ? "VICTORY" : null;
+function BattleView({context,target,hints,onResolve}:{context:BattleContext;target:City;hints:boolean;onResolve:(o:BattleOutcome,u:BattleUnit[])=>void}){
+  const [units,setUnits]=useState(context.units);const [selected,setSelected]=useState<number[]>(units.filter((u)=>u.side==="rome").slice(0,1).map((u)=>u.id));const [phase,setPhase]=useState<"deploy"|"fight">("deploy");const [paused,setPaused]=useState(true);const [speed,setSpeed]=useState(1);const [elapsed,setElapsed]=useState(0);const [log,setLog]=useState<string[]>([context.walls?"Enemy walls strengthen the defense.":"Open-field engagement."]);const field=useRef<HTMLDivElement>(null);const rout=moraleRule("rout_threshold");
+  const romans=units.filter((u)=>u.side==="rome"&&u.men>0&&u.morale>=rout),enemies=units.filter((u)=>u.side==="carthage"&&u.men>0&&u.morale>=rout);const result:BattleOutcome|null=!romans.length?"DEFEAT":!enemies.length?"VICTORY":null;
+  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.code==="Space"&&phase==="fight"){e.preventDefault();setPaused((v)=>!v)}};addEventListener("keydown",key);return()=>removeEventListener("keydown",key)},[phase]);
+  useEffect(()=>{if(paused||phase!=="fight"||result)return;const timer=setInterval(()=>{setElapsed((v)=>v+speed);setUnits((old)=>advanceBattle(old,speed,context.walls))},300);return()=>clearInterval(timer)},[paused,phase,speed,result,context.walls]);
+  function clickField(e:React.MouseEvent){if(!field.current||!selected.length)return;const r=field.current.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*100,y=(e.clientY-r.top)/r.height*100;if(phase==="deploy"&&x>42)return;setUnits((old)=>old.map((u)=>{if(!selected.includes(u.id))return u;const index=selected.indexOf(u.id),offset=(index-(selected.length-1)/2)*4;return{...u,x:phase==="deploy"?x:u.x,y:phase==="deploy"?Math.max(7,Math.min(93,y+offset)):u.y,tx:x,ty:Math.max(7,Math.min(93,y+offset)),charging:phase==="fight"}}))}
+  function clickUnit(e:React.MouseEvent,u:BattleUnit){e.stopPropagation();if(u.side==="rome"){if(u.morale<rout)return;setSelected(e.shiftKey?(old)=>old.includes(u.id)?old.filter((id)=>id!==u.id):[...old,u.id]:[u.id])}else if(phase==="fight"){setUnits((old)=>old.map((x)=>selected.includes(x.id)?{...x,attackTarget:u.id,tx:u.x,ty:u.y,charging:x.kind==="Cavalry"}:x));setLog((old)=>[`Attack order: ${u.name}.`,...old].slice(0,4));setPaused(false)}}
+  function formation(f:Formation){setUnits((old)=>old.map((u)=>selected.includes(u.id)?{...u,formation:f,tx:u.x,ty:u.y}:u))}
+  const chosen=units.find((u)=>u.id===selected[0]);
+  return <main className="game-shell"><header className="topbar"><div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>FIELD COMMAND</small></div></div><div className="battle-title"><strong>{context.defensive?"Defense of":"Battle for"} {target.name}</strong><span>{phase==="deploy"?"Deployment phase":`${Math.floor(elapsed/60)}:${String(elapsed%60).padStart(2,"0")} · ${context.walls?"Fortified":"Open field"}`}</span></div><div className="time-control">{phase==="deploy"?<button className="ready" onClick={()=>{setPhase("fight");setPaused(false)}}>BEGIN BATTLE</button>:<><button className={paused?"active":""} onClick={()=>setPaused(!paused)}>{paused?"▶":"Ⅱ"}</button>{[1,2,3].map((v)=><button key={v} className={speed===v?"active":""} onClick={()=>{setSpeed(v);setPaused(false)}}>{v}×</button>)}</>}</div></header>
+    <section className="command-row"><div className="army rome"><span className="standard">SPQR</span><strong>{romans.reduce((s,u)=>s+u.men,0)} effective</strong></div><div className="balance"><span style={{width:`${romans.reduce((s,u)=>s+u.men,0)/Math.max(1,[...romans,...enemies].reduce((s,u)=>s+u.men,0))*100}%`}}/><i/></div><div className="army carthage"><strong>{enemies.reduce((s,u)=>s+u.men,0)} effective</strong><span className="standard enemy">◆</span></div></section>
+    <section className="battle-layout"><aside className="unit-panel"><div className="panel-head"><span>Ⅰ</span><div><strong>YOUR ARMY</strong><small>{phase.toUpperCase()}</small></div></div>{units.filter((u)=>u.side==="rome").map((u)=><button className={`unit-card ${selected.includes(u.id)?"selected":""} ${u.morale<rout||!u.men?"fallen":""}`} key={u.id} onClick={(e)=>clickUnit(e,u)}><span className="unit-symbol">{unitIcon(u.kind)}</span><span className="unit-data"><strong>{u.name}</strong><small>{u.morale<rout?"Routing":`${u.formation} · Fatigue ${Math.round(u.stamina)}%`}</small><i><span style={{width:`${u.men/u.maxMen*100}%`}}/></i></span><span className="men"><b>{u.men}</b><small>{u.kind==="Archers"?`${u.ammo} ammo`:`${Math.round(u.morale)} mrl`}</small></span></button>)}</aside>
+      <div className="field-wrap"><div className={`field ${phase} ${context.walls?"siege":""}`} ref={field} onClick={clickField}><div className="terrain-ridge ridge-one"/><div className="terrain-ridge ridge-two"/><div className="farm-lines"/><div className="road"/>{context.walls&&<div className="city-wall">FORTIFICATIONS</div>}<div className="deployment roman-zone">ROMAN DEPLOYMENT</div><div className="deployment enemy-zone">ENEMY LINE</div>{units.map((u)=>u.men>0&&<button key={u.id} className={`formation-unit ${u.side} ${selected.includes(u.id)?"selected":""} ${u.morale<rout?"routing":""} ${u.formation.toLowerCase()}`} style={{left:`${u.x}%`,top:`${u.y}%`,transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} onClick={(e)=>clickUnit(e,u)}><span className="flag">{u.side==="rome"?"Ⅰ":"◆"}</span><span className="soldier-row">{Array.from({length:Math.max(2,Math.ceil(u.men/u.maxMen*8))}).map((_,i)=><i key={i}/>)}</span><small>{u.men}</small>{u.attackTarget&&<em>⚔</em>}</button>)}{result&&<div className="result"><small>THE EAGLES REPORT</small><strong>{result}</strong><p>{result==="VICTORY"?"The enemy line has broken.":"The Roman army can fight no longer."}</p><button onClick={()=>onResolve(result,units)}>Return to campaign</button>{result==="VICTORY"&&<button onClick={()=>onResolve(result,units.map((u)=>u.side==="carthage"?{...u,men:Math.floor(u.men*.75)}:u))}>Pursue survivors</button>}</div>}<div className="north">N<span>↑</span></div></div><div className="status-strip">{phase==="deploy"?"Select a cohort, then click the deployment zone. Hold Shift to select a group.":log[0]}<kbd>SPACE</kbd><span>Pause</span></div></div>
+      <aside className="orders-panel"><div className="orders-heading"><small>SELECTED UNIT</small><strong>{chosen?.name??"None"}</strong><span>{chosen?`${chosen.men} men · ${Math.round(chosen.morale)} morale`:"—"}</span></div><h3>FORMATION</h3><div className="formation-grid">{(["Line","Guard","Wedge"] as Formation[]).map((f)=><button key={f} className={chosen?.formation===f?"active":""} onClick={()=>formation(f)}><span>{f==="Line"?"━━":f==="Guard"?"▰":"◆"}</span><strong>{f}</strong></button>)}</div>{hints&&<div className="tip"><strong>FIELD REPORT</strong><p>Click an enemy to focus attacks. Hills reduce incoming damage, roads speed movement, cavalry charges from distance, and archers exhaust ammunition.</p></div>}<div className="battle-log">{log.map((x,i)=><p key={i}>{x}</p>)}</div>{phase==="fight"&&<button className="wide-order withdraw" onClick={()=>onResolve("WITHDRAWAL",units)}><span>↩</span><div><strong>WITHDRAW</strong><small>Preserve surviving cohorts</small></div></button>}</aside></section><footer><span>TACTICAL ENGINE · BUILD III</span><p>“The line must hold.”</p><span>FACING · FATIGUE · AMMUNITION · TERRAIN</span></footer></main>
+}
 
-  useEffect(() => { const key = (event: KeyboardEvent) => { if (event.code === "Space" && !(event.target instanceof HTMLButtonElement)) { event.preventDefault(); setPaused((value) => !value); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); }, []);
-  useEffect(() => {
-    if (paused || result) return;
-    const timer = window.setInterval(() => { setElapsed((value) => value + speed); setUnits((current) => advanceBattle(current, speed)); }, 300);
-    return () => window.clearInterval(timer);
-  }, [paused, speed, result]);
-
-  function issueOrder(event: React.MouseEvent<HTMLDivElement>) {
-    if (!fieldRef.current || !selected.length || result) return; const rect = fieldRef.current.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width * 100; const y = (event.clientY - rect.top) / rect.height * 100;
-    setUnits((old) => old.map((unit) => selected.includes(unit.id) ? { ...unit, tx: Math.max(4, Math.min(96, x)), ty: Math.max(7, Math.min(93, y + selected.indexOf(unit.id) * 3.5)), formation: unit.formation === "Guard" ? "Line" : unit.formation } : unit)); setMessage(`${selected.length} cohort${selected.length > 1 ? "s" : ""} moving.`);
+function processTurn(old:Campaign):{campaign:Campaign;encounter:BattleContext|null;notice:string}{
+  let c=cloneCampaign(old),encounter:BattleContext|null=null;const notes:string[]=[];c.turn++;if((c.turn-1)%4===0)c.year--;
+  const ri=sideIncome(c,"rome"),ru=sideUpkeep(c,"rome"),ei=sideIncome(c,"carthage");c.treasury=Math.max(0,c.treasury+ri-ru);c.enemyTreasury+=ei-sideUpkeep(c,"carthage");
+  c.cities=c.cities.map((city)=>{let next={...city,population:Math.round(city.population*(city.owner==="rome"?1.004:1.003))};next.recruitment=city.recruitment.map((q)=>({...q,turns:q.turns-1}));const done=next.recruitment.filter((q)=>q.turns<=0);next.recruitment=next.recruitment.filter((q)=>q.turns>0);if(done.length){next.garrison=[...next.garrison,...done.map((q,i)=>makeRoster(q.key,q.id,i+1))];notes.push(`${done.length} cohort${done.length>1?"s":""} mustered in ${city.name}.`)}if(next.construction){next.construction={...next.construction,turns:next.construction.turns-1};if(next.construction.turns<=0){const b=buildingDefinitions.find((x)=>x.name===next.construction!.name)!;next.buildings=[...next.buildings,b.name];next.defense+=b.defense;notes.push(`${b.name} completed in ${city.name}.`);next.construction=null}}return next});
+  c.armies=c.armies.map((a)=>{if(a.side!=="rome"||!a.targetCityId)return a;return{...a,cityId:a.targetCityId,targetCityId:null,movement:0}});
+  for(const army of c.armies.filter((a)=>a.side==="rome")){const enemy=c.armies.find((a)=>a.side==="carthage"&&a.cityId===army.cityId);const city=c.cities.find((x)=>x.id===army.cityId)!;if(enemy||city.owner==="carthage"){encounter=makeEncounter(army,enemy??null,city,false);notes.push(`${army.name} has encountered the enemy at ${city.name}.`);break}}
+  if(!encounter){
+    if(c.turn%2===0){const ai=c.armies.filter((a)=>a.side==="carthage").sort((a,b)=>armyPower(a)-armyPower(b))[0];const def=unitDefinitions[(c.turn/2)%unitDefinitions.length|0];if(ai&&c.enemyTreasury>=def.cost){ai.units.push(makeRoster(def.key,c.nextUnitId++,ai.units.length+1));c.enemyTreasury-=def.cost;notes.push("Carthage has raised fresh troops.")}}
+    for(const ai of c.armies.filter((a)=>a.side==="carthage")){if(c.turn<4)continue;const adjacent=c.cities.filter((x)=>connected(ai.cityId,x.id)&&x.owner==="rome").sort((a,b)=>a.defense-b.defense)[0];if(!adjacent)continue;const defender=c.armies.find((a)=>a.side==="rome"&&a.cityId===adjacent.id);if(defender){ai.cityId=adjacent.id;encounter=makeEncounter(defender,ai,adjacent,true);notes.push(`${ai.name} attacks ${adjacent.name}!`);break}if(armyPower(ai)>adjacent.defense*5+(adjacent.garrison.reduce((s,u)=>s+u.men,0))){adjacent.owner="carthage";ai.cityId=adjacent.id;notes.push(`${adjacent.name} has fallen to Carthage.`)}else{ai.units.forEach((u)=>u.men=Math.max(1,u.men-Math.ceil(adjacent.defense/10)));notes.push(`${adjacent.name} repelled a Carthaginian assault.`)}}
   }
-  function selectUnit(event: React.MouseEvent, id: number) { event.stopPropagation(); const unit = units.find((u) => u.id === id); if (!unit || unit.side !== "rome" || unit.morale < routThreshold || unit.men <= 0) return; setSelected(event.shiftKey ? (old) => old.includes(id) ? old.filter((n) => n !== id) : [...old, id] : [id]); }
-  function setFormation(formation: Formation) { setUnits((old) => old.map((u) => selected.includes(u.id) ? { ...u, formation, tx: u.x, ty: u.y } : u)); setMessage(`${formation} formation ordered.`); }
-  const chosen = units.find((u) => u.id === selected[0]); const mins = String(Math.floor(elapsed / 60)).padStart(2, "0"); const secs = String(elapsed % 60).padStart(2, "0");
-
-  return <main className="game-shell">
-    <header className="topbar"><div className="brand"><span className="laurel">❧</span><div><strong>IMPERIUM</strong><small>FIELD COMMAND</small></div></div><div className="battle-title"><strong>Siege of {targetName}</strong><span>{targetName} approaches · {activeRomans.length} cohorts engaged</span></div><div className="time-control"><span className="timer">{mins}:{secs}</span><button className={paused ? "active" : ""} onClick={() => setPaused((v) => !v)}>{paused ? "▶" : "Ⅱ"}</button>{[1,2,3].map((v) => <button key={v} className={speed === v ? "active" : ""} onClick={() => { setSpeed(v); setPaused(false); }}>{v}×</button>)}<button onClick={onWithdraw}>↩</button></div></header>
-    <section className="command-row"><div className="army rome"><span className="standard">SPQR</span><div><small>YOUR ARMY</small><strong>Roman Republic</strong></div><b>{romanStrength}</b><em>effective</em></div><div className="balance"><span style={{ width: `${romanStrength / Math.max(1, romanStrength + enemyStrength) * 100}%` }} /><i /></div><div className="army carthage"><em>effective</em><b>{enemyStrength}</b><div><small>ENEMY ARMY</small><strong>Carthage</strong></div><span className="standard enemy">◆</span></div></section>
-    <section className="battle-layout">
-      <aside className="unit-panel"><div className="panel-head"><span>Ⅰ</span><div><strong>FIELD ARMY</strong><small>{targetName.toUpperCase()}</small></div></div><div className="select-note">SHIFT + SELECT FOR GROUP</div>{units.filter((u) => u.side === "rome").map((u) => <button key={u.id} className={`unit-card ${selected.includes(u.id) ? "selected" : ""} ${u.men <= 0 || u.morale < routThreshold ? "fallen" : ""}`} onClick={(e) => selectUnit(e,u.id)}><span className="unit-symbol">{unitIcon(u.kind)}</span><span className="unit-data"><strong>{u.name}</strong><small>{u.kind} · {u.morale < routThreshold ? "Routing" : u.formation}</small><i><span style={{ width: `${u.men/u.maxMen*100}%` }} /></i></span><span className="men"><b>{u.men}</b><small>{Math.round(u.morale)} MRL</small></span></button>)}</aside>
-      <div className="field-wrap"><div className="field" ref={fieldRef} onClick={issueOrder} role="application" aria-label="Battlefield"><div className="terrain-ridge ridge-one"/><div className="terrain-ridge ridge-two"/><div className="farm-lines"/><div className="road"/><div className="scrub s1">♣</div><div className="scrub s2">♣</div><div className="scrub s3">♣</div><div className="deployment roman-zone">ROMAN DEPLOYMENT</div><div className="deployment enemy-zone">CARTHAGINIAN LINE</div>
-        {units.map((u) => u.men > 0 && <button key={u.id} className={`formation-unit ${u.side} ${selected.includes(u.id)?"selected":""} ${u.morale<routThreshold?"routing":""} ${u.formation.toLowerCase()}`} style={{left:`${u.x}%`,top:`${u.y}%`,transform:`translate(-50%, -50%) rotate(${u.facing}deg)`}} onClick={(e)=>selectUnit(e,u.id)}><span className="flag">{u.side==="rome"?"Ⅰ":"◆"}</span><span className="soldier-row">{Array.from({length:Math.max(2,Math.ceil(u.men/u.maxMen*8))}).map((_,i)=><i key={i}/>)}</span><small>{u.men}</small></button>)}
-        {selected.map((id)=>{const u=units.find((item)=>item.id===id);return u&&distancePoint(u.x,u.y,u.tx,u.ty)>1?<div key={id} className="order-marker" style={{left:`${u.tx}%`,top:`${u.ty}%`}}><span/></div>:null})}<div className="north">N<span>↑</span></div><div className="scale">100 PACES</div>{result&&<div className="result"><small>THE EAGLES REPORT</small><strong>{result}</strong><p>{result==="VICTORY"?`${targetName} is open to occupation.`:"The surviving cohorts must regroup."}</p><button onClick={(e)=>{e.stopPropagation();onResolve(result,units)}}>Return to campaign</button></div>}</div><div className="status-strip"><span className={paused?"amber-dot":"green-dot"}/>{result?`Battle concluded — ${result}`:paused?"Battle paused — issue your orders":message}<kbd>SPACE</kbd><span>Pause</span><kbd>SHIFT</kbd><span>Multi-select</span></div></div>
-      <aside className="orders-panel"><div className="orders-heading"><small>SELECTED UNIT</small><strong>{chosen?.name??"No cohort"}</strong><span>{chosen?`${chosen.men} men · ${Math.round(chosen.morale)} morale`:"—"}</span></div><h3>FORMATION</h3><div className="formation-grid">{formations.map((f)=><button key={f.name} className={chosen?.formation===f.name?"active":""} onClick={()=>setFormation(f.name)}><span>{f.icon}</span><strong>{f.name}</strong><small>{f.note}</small></button>)}</div><h3>COMBAT MODEL</h3><div className="tip"><strong>TACTICAL RULES</strong><p>Damage is simultaneous. Spears counter cavalry; cavalry punish archers. Guard reduces damage, wedges increase impact, and surrounded units lose morale faster.</p></div><button className="wide-order withdraw" onClick={onWithdraw}><span>↩</span><div><strong>WITHDRAW</strong><small>Return without resolving</small></div></button></aside>
-    </section><footer><span>TACTICAL ENGINE · BUILD II</span><p>“Discipline conquers fear.”</p><span>SIMULTANEOUS COMBAT · PERSISTENT LOSSES</span></footer>
-  </main>;
+  for(const army of c.armies){const city=c.cities.find((x)=>x.id===army.cityId);if(city?.owner===army.side){for(const unit of army.units){const missing=unit.maxMen-unit.men,restore=Math.min(missing,Math.ceil(unit.maxMen*.08));const treasury=army.side==="rome"?"treasury":"enemyTreasury";const affordable=Math.min(restore,Math.floor(c[treasury]/2),Math.floor(city.population/20));unit.men+=affordable;c[treasury]-=affordable*2;city.population-=affordable*20}}army.movement=1}
+  if(c.turn%3===0){const events=[{text:"A strong harvest fills the granaries.",gold:450},{text:"Merchants fund the Sicilian expedition.",gold:600},{text:"Disease reduces urban growth.",gold:-250}];const e=events[(c.turn/3)%events.length|0];c.treasury=Math.max(0,c.treasury+e.gold);notes.push(`${e.text} ${e.gold>0?`+${e.gold}`:e.gold} denarii.`)}
+  const syracuse=c.cities.find((x)=>x.name==="Syracuse"),romeCity=c.cities.find((x)=>x.name==="Rome");if(syracuse?.owner==="rome"&&!c.log.some((x)=>x.includes("Senate rewards"))){c.treasury+=2000;notes.push("The Senate rewards the conquest of Syracuse: +2,000 denarii.")}if(c.cities.every((x)=>x.owner==="rome"))c.result="ROMAN VICTORY";if(romeCity?.owner==="carthage")c.result="THE REPUBLIC HAS FALLEN";if(c.turn>20&&syracuse?.owner!=="rome")c.result="THE SENATE WITHDRAWS ITS MANDATE";
+  c.log=[...notes,...c.log].slice(0,8);return{campaign:c,encounter,notice:notes[0]??`Turn ${c.turn} begins.`}
 }
 
-function advanceBattle(current: Unit[], speed: number): Unit[] {
-  const next = current.map((unit) => ({ ...unit }));
-  const routThreshold = moraleRule("rout_threshold");
-  for (const unit of next) {
-    if (unit.men <= 0) continue;
-    const stats = unitDefinition(unit.key);
-    if (unit.morale < routThreshold) { unit.tx = unit.side === "rome" ? -5 : 105; unit.ty = unit.y; unit.formation = "Line"; }
-    const enemies = next.filter((other) => other.side !== unit.side && other.men > 0 && other.morale >= routThreshold);
-    if (!enemies.length) continue;
-    const nearest = enemies.reduce((best, candidate) => distance(unit,candidate) < distance(unit,best) ? candidate : best, enemies[0]);
-    const range = stats?.range ?? (unit.kind === "Archers" ? 20 : 6.2);
-    if (unit.side === "carthage" && unit.morale >= routThreshold && distance(unit,nearest) > range * .88) { unit.tx = nearest.x; unit.ty = nearest.y; }
-    const engaged = unit.kind !== "Archers" && distance(unit,nearest) <= range;
-    const dx=unit.tx-unit.x, dy=unit.ty-unit.y, travel=Math.hypot(dx,dy); const pace=(stats?.speed ?? .86)*speed;
-    if (travel>.4 && !engaged && unit.formation!=="Guard") { unit.x += dx/travel*Math.min(pace,travel); unit.y += dy/travel*Math.min(pace,travel); unit.facing=Math.atan2(dy,dx)*180/Math.PI; }
-  }
-  const damage = new Map<number, number>(); const moraleDamage = new Map<number, number>();
-  for (const attacker of next) {
-    if (attacker.men<=0 || attacker.morale<routThreshold) continue;
-    const stats=unitDefinition(attacker.key); const range=stats?.range??6.4; const targets=next.filter((u)=>u.side!==attacker.side&&u.men>0&&u.morale>=routThreshold&&distance(attacker,u)<=range).sort((a,b)=>distance(attacker,a)-distance(attacker,b));
-    const target=targets[0]; if(!target) continue;
-    const strength=Math.max(.25,attacker.men/attacker.maxMen); const matchupBonus=matchup(attacker.kind,target.kind); const attackFormation=formationAttack(attacker.formation); const defenseFormation=formationDefense(target.formation);
-    const casualties=Math.max(1,Math.round((stats?.attack??1)*strength*matchupBonus*attackFormation*defenseFormation*speed));
-    damage.set(target.id,(damage.get(target.id)??0)+casualties);
-    const engagedBy=next.filter((u)=>u.side===attacker.side&&u.men>0&&u.morale>=routThreshold&&distance(u,target)<7).length; moraleDamage.set(target.id,(moraleDamage.get(target.id)??0)+casualties*moraleRule("casualty")+(engagedBy>1?moraleRule("surrounded")*speed:0));
-  }
-  for(const unit of next){const losses=Math.min(unit.men,damage.get(unit.id)??0);unit.men-=losses;unit.morale=Math.max(0,unit.morale-(moraleDamage.get(unit.id)??0)-(unit.men<unit.maxMen*.3?.35*speed:0));}
-  return next;
-}
+function makeEncounter(player:Army,enemy:Army|null,city:City,defensive:boolean):BattleContext{const enemyUnits=enemy?.units.length?enemy.units:enemyRoster(city.id,city.id);return{units:createBattle(player.units,enemyUnits,defensive,city.buildings.includes("Walls")),playerArmyId:player.id,enemyArmyId:enemy?.id??null,targetCityId:city.id,defensive,walls:city.buildings.includes("Walls")}}
+function applyBattle(old:Campaign,b:BattleContext,outcome:BattleOutcome,survivors:BattleUnit[]):{campaign:Campaign;notice:string}{let c=cloneCampaign(old);const keep=(side:Side)=>survivors.filter((u)=>u.side===side&&u.men>0).map(toRoster);const player=keep("rome"),enemy=keep("carthage");c.armies=c.armies.map((a)=>a.id===b.playerArmyId?{...a,units:player}:a.id===b.enemyArmyId?{...a,units:enemy}:a).filter((a)=>a.units.length);const city=c.cities.find((x)=>x.id===b.targetCityId)!;if(outcome==="VICTORY"){city.owner="rome";city.defense=Math.max(12,city.defense-10);c.treasury+=650;const army=c.armies.find((a)=>a.id===b.playerArmyId);if(army)army.units.forEach((u)=>u.experience=Math.min(3,u.experience+1));c.armies=c.armies.filter((a)=>a.id!==b.enemyArmyId);c.log=[`${city.name} captured after battle.`,...c.log]}else{if(b.defensive)city.owner="carthage";const army=c.armies.find((a)=>a.id===b.playerArmyId);if(army){const fallback=neighbors(city.id).map((id)=>c.cities.find((x)=>x.id===id)).find((x)=>x?.owner==="rome");if(fallback)army.cityId=fallback.id}c.log=[`${outcome==="WITHDRAWAL"?"The army withdrew from":"Rome was defeated at"} ${city.name}${b.defensive?"; the city has fallen":""}.`,...c.log]}return{campaign:c,notice:c.log[0]}}
 
-function createBattle(roster: RosterUnit[], enemyPower: number): Unit[] {
-  const romans=roster.slice(0,8).map((u,i)=>({...u,side:"rome" as Side,morale:unitDefinition(u.key)?.morale??92,x:16+(i%2)*9,y:22+Math.floor(i/2)*18,tx:16+(i%2)*9,ty:22+Math.floor(i/2)*18,facing:0,formation:(u.kind==="Cavalry"?"Wedge":u.kind==="Spears"?"Guard":"Line") as Formation}));
-  const kinds:Kind[]=["Spears","Infantry","Cavalry","Archers","Infantry","Spears"]; const count=Math.max(3,Math.min(6,Math.ceil(enemyPower/120))); const per=Math.max(55,Math.round(enemyPower/count));
-  const enemies=Array.from({length:count},(_,i)=>{const definition=unitDefinitions.find((unit)=>unit.kind===kinds[i])??unitDefinitions[0];return {id:1000+i,key:definition.key,name:["Libyan Spears","Iberian Swords","Numidian Riders","Balearic Slingers","Sacred Band","African Infantry"][i],kind:kinds[i],men:per,maxMen:per,upkeep:0,side:"carthage" as Side,morale:definition.morale,x:76+(i%2)*8,y:24+Math.floor(i/2)*22,tx:76+(i%2)*8,ty:24+Math.floor(i/2)*22,facing:180,formation:(kinds[i]==="Cavalry"?"Wedge":"Line") as Formation};}); return [...romans,...enemies];
-}
-function cityIncome(city:City){return city.baseIncome+city.buildings.reduce((sum,name)=>sum+(buildingCatalog.find((b)=>b.name===name)?.income??0),0);}
-function unitIcon(kind:Kind){return kind==="Cavalry"?"♞":kind==="Archers"?"➶":kind==="Spears"?"♜":"⚔";}
-function buildingIcon(name:BuildingName){return buildingDefinitions.find((building)=>building.name===name)?.icon??"▦";}
-function romanNumeral(n:number){return ["I","II","III","IV","V","VI","VII","VIII","IX","X"][Math.min(9,Math.max(0,n-1))];}
-function distance(a:Unit,b:Unit){return Math.hypot(a.x-b.x,a.y-b.y);}
-function distancePoint(ax:number,ay:number,bx:number,by:number){return Math.hypot(ax-bx,ay-by);}
+function advanceBattle(old:BattleUnit[],speed:number,walls:boolean){const next=old.map((u)=>({...u})),rout=moraleRule("rout_threshold");for(const u of next){if(!u.men)continue;const stats=unitDefinition(u.key)!;if(u.morale<rout){u.tx=u.side==="rome"?-5:105;u.ty=u.y;u.attackTarget=null}let target=u.attackTarget?next.find((x)=>x.id===u.attackTarget&&x.men&&x.morale>=rout):null;const enemies=next.filter((x)=>x.side!==u.side&&x.men&&x.morale>=rout);if(!target&&u.side==="carthage"&&enemies.length)target=enemies.sort((a,b)=>distance(u,a)-distance(u,b))[0];let range=u.kind==="Archers"&&u.ammo>0?stats.range:6.4;if(target&&distance(u,target)>range*.9){u.tx=target.x;u.ty=target.y}const dx=u.tx-u.x,dy=u.ty-u.y,d=Math.hypot(dx,dy),engaged=target&&distance(u,target)<=range;if(d>.4&&!engaged&&u.formation!=="Guard"){const road=u.y>73&&u.y<87?1.2:1;const pace=stats.speed*(1-u.stamina/180)*road*speed;u.x+=dx/d*Math.min(pace,d);u.y+=dy/d*Math.min(pace,d);u.facing=Math.atan2(dy,dx)*180/Math.PI;u.stamina=Math.min(100,u.stamina+.35*speed)}else u.stamina=Math.max(0,u.stamina-.18*speed)}
+  const damage=new Map<number,number>(),morale=new Map<number,number>();for(const a of next){if(!a.men||a.morale<rout)continue;const stats=unitDefinition(a.key)!,range=a.kind==="Archers"&&a.ammo>0?stats.range:6.4;const targets=next.filter((x)=>x.side!==a.side&&x.men&&x.morale>=rout&&distance(a,x)<=range).sort((x,y)=>(x.id===a.attackTarget?-1:y.id===a.attackTarget?1:distance(a,x)-distance(a,y)));const t=targets[0];if(!t)continue;if(a.kind==="Archers"&&a.ammo>0)a.ammo=Math.max(0,a.ammo-speed);const flank=flanking(a,t)?1.3:1,charge=a.kind==="Cavalry"&&a.charging?1.35:1,fatigue=Math.max(.55,1-a.stamina/180),hill=t.y<34?.82:1,wall=walls&&t.side==="carthage"&&t.x>70?.76:1;const loss=Math.max(1,Math.round(stats.attack*(a.men/a.maxMen)*matchup(a.kind,t.kind)*formationAttack(a.formation)*formationDefense(t.formation)*flank*charge*fatigue*hill*wall*speed));damage.set(t.id,(damage.get(t.id)??0)+loss);morale.set(t.id,(morale.get(t.id)??0)+loss*moraleRule("casualty")+(flank?1.2:0));a.charging=false;a.stamina=Math.min(100,a.stamina+.55*speed)}for(const u of next){const loss=Math.min(u.men,damage.get(u.id)??0);u.men-=loss;u.morale=Math.max(0,u.morale-(morale.get(u.id)??0));}return next}
+
+function createBattle(roman:RosterUnit[],punic:RosterUnit[],defensive:boolean,walls:boolean):BattleUnit[]{const make=(u:RosterUnit,i:number,side:Side):BattleUnit=>({...u,side,morale:unitDefinition(u.key)?.morale??90,stamina:0,ammo:u.kind==="Archers"?24:0,x:side==="rome"?16+(i%2)*10:76+(i%2)*9,y:22+Math.floor(i/2)*17,tx:side==="rome"?16+(i%2)*10:76+(i%2)*9,ty:22+Math.floor(i/2)*17,facing:side==="rome"?0:180,formation:u.kind==="Cavalry"?"Wedge":u.kind==="Spears"||walls?"Guard":"Line",attackTarget:null,charging:false});return[...roman.slice(0,8).map((u,i)=>make(u,i,"rome")),...punic.slice(0,8).map((u,i)=>make(u,i,"carthage"))]}
+function makeRoster(key:string,id:number,index:number):RosterUnit{const d=unitDefinition(key)??unitDefinitions[0];return{id,key:d.key,name:`${d.name} ${romanNumeral(index)}`,kind:d.kind,men:d.men,maxMen:d.men,upkeep:d.upkeep,experience:0}}
+function enemyRoster(cityId:number,seed:number){const keys=["hastati","triarii","equites","velites"];return keys.map((k,i)=>{const u=makeRoster(k,5000+cityId*20+i,i+1);u.name=["Iberian Swords","Libyan Spears","Numidian Riders","Balearic Slingers"][i];u.men=Math.round(u.men*(seed%2?1:.9));u.maxMen=u.men;return u})}
+function toRoster({id,key,name,kind,men,maxMen,upkeep,experience}:BattleUnit):RosterUnit{return{id,key,name,kind,men,maxMen,upkeep,experience}}
+function cityIncome(c:City){return c.baseIncome+c.buildings.reduce((s,n)=>s+(buildingDefinitions.find((b)=>b.name===n)?.income??0),0)}
+function sideIncome(c:Campaign,s:Side){return c.cities.filter((x)=>x.owner===s).reduce((n,x)=>n+cityIncome(x),0)}function sideUpkeep(c:Campaign,s:Side){return c.armies.filter((a)=>a.side===s).flatMap((a)=>a.units).reduce((n,u)=>n+u.upkeep,0)}
+function armyPower(a:Army){return a.units.reduce((s,u)=>s+u.men*(1+u.experience*.1),0)}function connected(a:number,b:number){return connections.some(([x,y])=>(x===a&&y===b)||(x===b&&y===a))}function neighbors(id:number){return connections.flatMap(([a,b])=>a===id?[b]:b===id?[a]:[])}
+function flanking(a:BattleUnit,t:BattleUnit){const toward=Math.atan2(a.y-t.y,a.x-t.x)*180/Math.PI;let diff=Math.abs(((toward-t.facing+540)%360)-180);return diff>115}
+function unitIcon(k:Kind){return k==="Cavalry"?"♞":k==="Archers"?"➶":k==="Spears"?"♜":"⚔"}function romanNumeral(n:number){return["I","II","III","IV","V","VI","VII","VIII","IX","X"][Math.min(9,Math.max(0,n-1))]??String(n)}function distance(a:{x:number;y:number},b:{x:number;y:number}){return Math.hypot(a.x-b.x,a.y-b.y)}function cloneCampaign(c:Campaign):Campaign{return JSON.parse(JSON.stringify(c))}
