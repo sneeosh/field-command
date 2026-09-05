@@ -31,4 +31,19 @@ Quick battle supports Italy, Greece, and Japan; Plains, Hills, Forest, and River
 
 Pure simulation modules live under `lib/`; rendering and player input live under `app/`. Editable rules are in `game-data/`. Invalid Markdown updates are rejected before replacing the active definitions.
 
-This remains a tactical prototype: units are abstract formations, terrain uses fixed regions rather than a navigation mesh, and unaccompanied city garrisons use campaign autoresolution. Saves are device-local unless exported, not cloud synchronized.
+This remains a tactical prototype: units use abstract formation footprints and terrain uses fixed regions rather than a navigation mesh. Saves are device-local unless exported, not cloud synchronized.
+
+## Tactical roadmap update
+
+- Facing arrows lock the formation's facing; Auto restores movement-facing. Front, flank, and rear attacks have distinct effects. Narrow/Standard/Wide frontage changes spacing and combat effectiveness. Overlapping active formations are separated, including at bridges.
+- Recruit, Commander, and Veteran difficulty alter enemy decisions rather than soldier statistics. Tactical commanders screen missile troops, keep an early reserve, flank, and contest a threatened breach. Faction personality changes reserve timing.
+- City attacks are playable even without a field army. An empty settlement musters a limited militia. Available armies in the same settlement or one connected road away reinforce; sea routes do not grant immediate support. Casualties return to each army's roster.
+- Intact walls block attackers until they break the central gate. Assaults require capturing the marked point beyond the gate; defenders hold their marked point. Routing the opposing army remains an alternative victory condition.
+- Faction specialties, recruitment discounts, and morale bonuses are editable in Factions Markdown. General traits affect morale, melee, logistics, and sieges. Low loyalty hurts morale. Replenishment dilutes veteran experience; unrest reflects culture and garrison presence.
+- Friendly resupply requires a connected unoccupied supply route to the capital (enemy supply centers use markets). Armies cut off from supply risk attrition.
+- Battle Lab includes guided, action-driven training and reports based on recorded attacks. Sound is optional, starts only after a click, and uses quiet synthesized cues for volleys, clashes, and routing.
+- The previous shipped default save format upgrades automatically. Saves using custom Markdown still require matching rules.
+
+### Validation notes
+
+Automated checks cover battle completion at all three difficulties, formation geometry, siege gates, garrison defense, supporting army casualties, and conquest/diplomacy campaign flows in all three theaters. Campaign policy tests assume tactical victories; they are not proof that every opening strategy wins. A direct all-out attack with the starting army loses against the concentrated Greek and Japanese defenders in the simulated samples, so recruiting and managing nearby reinforcements matter. Human balance and visual playtesting remain necessary.

@@ -20,7 +20,7 @@ export type CombatRule={rule:"matchup"|"formation_attack"|"formation_defense"|"m
 export type TerrainFeature="Open"|"Road"|"Hill"|"Forest"|"River"|"Bridge";
 export type TerrainRule={key:TerrainFeature;movement:number;melee:number;missile:number;incomingDamage:number;fatigue:number;visibility:number;note:string};
 export type TheaterDefinition={key:string;name:string;subtitle:string;map:string;aspect:number;playerFaction:string;enemyFaction:string;capitalCity:number;objectiveCity:number;turnLimit:number;startYear:number;treasury:number;enemyTreasury:number;reward:number;description:string};
-export type FactionDefinition={key:string;theater:string;side:Side;name:string;short:string;icon:string;personality:string;color:string;accent:string};
+export type FactionDefinition={key:string;theater:string;side:Side;name:string;short:string;icon:string;personality:string;color:string;accent:string;specialty:Kind;recruitment:number;morale:number;doctrine:string};
 export type RouteDefinition={theater:string;from:number;to:number;type:"road"|"sea"};
 type Row=Record<string,string>;
 type Bundle={units:UnitDefinition[];buildings:BuildingDefinition[];cities:CityDefinition[];rules:CombatRule[];terrainRules:TerrainRule[];theaters:TheaterDefinition[];factions:FactionDefinition[];routes:RouteDefinition[];version:string};
@@ -50,7 +50,7 @@ function compile(content:MarkdownContent):Bundle{
   const rules:CombatRule[]=parse(content.combatBonuses,"combat-bonuses.md").map((r)=>({rule:one(r.rule,["matchup","formation_attack","formation_defense","morale"] as const,"combat-bonuses.md","rule"),subject:r.subject,target:r.target,multiplier:num(r,"multiplier","combat-bonuses.md"),note:r.note}));
   const terrainRules:TerrainRule[]=parse(content.terrainRules,"terrain-rules.md").map((r)=>({key:one(r.key,terrainFeatures,"terrain-rules.md","key"),movement:num(r,"movement","terrain-rules.md"),melee:num(r,"melee","terrain-rules.md"),missile:num(r,"missile","terrain-rules.md"),incomingDamage:num(r,"incomingDamage","terrain-rules.md"),fatigue:num(r,"fatigue","terrain-rules.md"),visibility:num(r,"visibility","terrain-rules.md"),note:r.note}));
   const theaters:TheaterDefinition[]=parse(content.theaters,"theaters.md").map((r)=>({key:r.key,name:r.name,subtitle:r.subtitle,map:r.map,aspect:num(r,"aspect","theaters.md"),playerFaction:r.playerFaction,enemyFaction:r.enemyFaction,capitalCity:num(r,"capitalCity","theaters.md"),objectiveCity:num(r,"objectiveCity","theaters.md"),turnLimit:num(r,"turnLimit","theaters.md"),startYear:num(r,"startYear","theaters.md"),treasury:num(r,"treasury","theaters.md"),enemyTreasury:num(r,"enemyTreasury","theaters.md"),reward:num(r,"reward","theaters.md"),description:r.description}));
-  const factions:FactionDefinition[]=parse(content.factions,"factions.md").map((r)=>({key:r.key,theater:r.theater,side:one(r.side,sides,"factions.md","side"),name:r.name,short:r.short,icon:r.icon,personality:r.personality,color:r.color,accent:r.accent}));
+  const factions:FactionDefinition[]=parse(content.factions,"factions.md").map((r)=>({key:r.key,theater:r.theater,side:one(r.side,sides,"factions.md","side"),name:r.name,short:r.short,icon:r.icon,personality:r.personality,color:r.color,accent:r.accent,specialty:one(r.specialty??"Infantry",kinds,"factions.md","specialty"),recruitment:r.recruitment===undefined?1:num(r,"recruitment","factions.md"),morale:r.morale===undefined?0:num(r,"morale","factions.md"),doctrine:r.doctrine??"Standard recruitment"}));
   const routes:RouteDefinition[]=parse(content.routes,"routes.md").map((r)=>({theater:r.theater,from:num(r,"from","routes.md"),to:num(r,"to","routes.md"),type:one(r.type,["road","sea"] as const,"routes.md","type")}));
   validate({units,buildings,cities,rules,terrainRules,theaters,factions,routes,version:""});
   return{units,buildings,cities,rules,terrainRules,theaters,factions,routes,version:fingerprint(content)};
@@ -64,6 +64,7 @@ function validate(bundle:Bundle){
   if(theaterKeys.size!==theaters.length)throw new Error("theaters.md: theater keys must be unique.");
   if(terrainRules.length!==terrainFeatures.length||terrainFeatures.some((feature)=>!terrainRules.some((rule)=>rule.key===feature)))throw new Error("terrain-rules.md: define each terrain key exactly once.");
   const range=(v:number,min:number,max:number,label:string,integer=false)=>{if(v<min||v>max||integer&&!Number.isInteger(v))throw new Error(`${label} must be ${integer?"an integer ":""}between ${min} and ${max}.`)};
+  for(const f of factions){range(f.recruitment,.5,2,`${f.name}: recruitment`);range(f.morale,0,15,`${f.name}: morale`);}
   for(const u of units){
     if(!u.key.trim()||!u.name.trim()||!theaterKeys.has(u.theater))throw new Error("units.md: every unit needs a key, name, and valid theater.");
     range(u.men,1,10000,`${u.name}: men`,true);range(u.cost,0,1000000,`${u.name}: cost`,true);range(u.upkeep,0,100000,`${u.name}: upkeep`,true);
@@ -80,6 +81,7 @@ function validate(bundle:Bundle){
 }
 
 const initial=compile(markdownDefaults);
+export const defaultContentVersion=initial.version;
 export const unitDefinitions=initial.units,buildingDefinitions=initial.buildings,cityDefinitions=initial.cities,combatRules=initial.rules,terrainRules=initial.terrainRules,theaterDefinitions=initial.theaters,factionDefinitions=initial.factions,routeDefinitions=initial.routes;
 export let contentVersion=initial.version;
 

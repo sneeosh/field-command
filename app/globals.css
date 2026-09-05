@@ -104,6 +104,26 @@ footer{display:flex;justify-content:space-between;align-items:center;padding:0 1
 @media(max-width:760px){.map-tools{right:7px;top:7px}.map-zoom strong{min-width:32px}.map-zoom{height:27px}}
 @media(prefers-reduced-motion:reduce){.geo-frame{transition:none}}
 
+/* Tactical command tools use the existing bronze/parchment theme. */
+.facing-controls,.battle-options,.field-training{margin:10px;padding:12px;background:#bbae8b;border:1px solid #897447;color:#2e2a20}
+.facing-controls>strong{display:block;font:14px Arial;margin-bottom:8px}.facing-controls>div{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.facing-controls button,.battle-options button,.field-training button{min-height:38px;font:14px Arial;border:1px solid #897447;background:#e2d1a8;color:#352a1c;padding:8px}
+.facing-controls button[aria-pressed=true]{background:var(--roman);color:#fff0c3}.battle-options{display:flex;flex-wrap:wrap;gap:6px}.battle-options small{font:12px/1.5 Arial;width:100%}
+.field-training{background:#2d3c32;color:#f1e5c5;border-color:#c5a258}.field-training strong{font:16px Georgia}.field-training p{font:14px/1.5 Arial;margin:8px 0}
+.report-analysis{text-align:left;border:1px solid #85704a;padding:20px;margin-top:20px;background:#262c23;color:#e9dbb9}.report-analysis h2{font:22px Georgia;margin:0 0 12px}.report-analysis p{font:15px/1.6 Arial}
+.battle-briefing{padding:12px;border-bottom:2px solid #a5874c;background:#30382d;color:#eee0bd}.battle-briefing strong{font:17px Georgia}.battle-briefing p{font:14px/1.5 Arial;margin:8px 0}.battle-briefing small{font:12px/1.5 Arial;color:#c9bc9d}
+.launch-actions label{font:14px Arial}.launch-actions select{font:14px Arial;background:#34372b;color:#eddfbb;padding:10px;border:1px solid #b59452;margin-left:8px}
+.doctrine-note{border-left:3px solid #c5a258;padding-left:12px;color:#e4c580!important;font:14px/1.5 Arial!important}
+.battle-setup-options{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.field .formation-unit{height:32px;min-width:20px;transition:none}.field .formation-unit .soldier-row{top:10px;gap:1px;flex-wrap:nowrap}.field .formation-unit i{flex:1;min-width:1px;max-width:9px;height:10px}.field .formation-unit .flag{left:calc(50% - 7px);top:-5px}.field .formation-unit small{left:calc(50% - 10px);font-size:10px;top:25px}.field .formation-unit:before{content:"";position:absolute;top:-13px;left:calc(50% - 4px);border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:7px solid #f5d477}
+.field .city-wall,.field .city-wall.friendly-wall{right:auto;top:5%;bottom:5%;border-left:5px double #433620;font:12px Arial;pointer-events:none;z-index:2}
+.siege-gate{position:absolute;top:50%;transform:translate(-50%,-50%);height:20%;min-width:48px;background:#594328;border:3px solid #b99a55;color:#f9e3aa;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3;pointer-events:none;font:12px Arial}
+.siege-gate.breached{background:#6d665233;border-style:dashed}.siege-gate strong{font-size:12px}.siege-gate span{padding-top:6px}
+.capture-point{position:absolute;top:50%;width:26%;height:26%;transform:translate(-50%,-50%);border:2px dashed #dac275;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#64511d;background:#dec05722;pointer-events:none;z-index:2;font-size:24px}.capture-point span{font:bold 12px Arial}
+.field.siege:before{display:none}.field.deploy.siege:before{display:grid;content:"DEPLOY HERE";left:2%;right:auto;top:5%;bottom:5%;width:37%;background:#7f25151c;border:2px dashed #f0d68199;color:#5f1e18;place-items:center}
+.field .breakthrough-zone{display:none}.formation-unit.routing:after{content:"ROUT";position:absolute;top:-24px;left:0;color:#7f201c;background:#f0d49e;font:bold 10px Arial;padding:2px;transform:rotate(calc(-1 * var(--angle,0deg)))}
+@media(max-width:700px){.facing-controls,.battle-options,.field-training{margin:5px;padding:8px}.facing-controls button,.battle-options button{font-size:12px;padding:6px}.field-training p{font-size:13px}.siege-gate{min-width:34px}.siege-gate strong,.capture-point span{font-size:10px}.report-analysis{padding:12px}}
+
 /* Field Command: readable controls and a map-first campaign workspace. */
 button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid #e5bd61;outline-offset:3px}
 button:disabled{cursor:not-allowed;opacity:.45}
