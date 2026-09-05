@@ -1,4 +1,5 @@
 import { attackAspect, separateFormations, commandAI } from "./tactics.ts";
+import { autoDeploy } from "./deployment.ts";
 import { unitDefinition, factionDefinition, formationAttack, formationDefense, matchup, moraleRule, terrainRule } from "./game-content.ts";
 import { battlefieldFeatureAt, battleObjective, hasExitedBattlefield } from "./simulation-engine.ts";
 import type { Side } from "./game-content.ts";
@@ -31,9 +32,9 @@ export function deploymentPositions(count:number,x:number,y:number){
 export function createBattle(roman:RosterUnit[],punic:RosterUnit[],defensive:boolean,walls:boolean,general:General|null=null,tradition=0,stance:ArmyStance="March",supplies=100):BattleUnit[]{
   const make=(u:RosterUnit,i:number,side:Side):BattleUnit=>{
     const x=side==="rome"?15+(i%2)*14:72+(i%2)*14,y=22+Math.floor(i/2)*18;
-    return {...u,side,morale:(unitDefinition(u.key)?.morale??90)+(side==="rome"?(general?.command??0)*.45+tradition*2+(stance==="Ambush"?6:0)-(supplies<25?12:0):0),stamina:0,ammo:u.kind==="Archers"?24:0,x,y,tx:x,ty:y,facing:side==="rome"?0:180,formation:u.kind==="Cavalry"?"Wedge":u.kind==="Spears"?"Guard":"Line",attackTarget:null,charging:false,withdrawn:false,order:side==="rome"?"Move":u.kind==="Archers"?"Skirmish":walls&&!defensive?"Hold":"Attack",cooldown:0,damageCarry:0,width:"Standard",lockedFacing:null};
+    return {...u,side,morale:(unitDefinition(u.key)?.morale??90)+(side==="rome"?(general?.command??0)*.45+tradition*2+(stance==="Ambush"?6:0)-(supplies<25?12:0):0),stamina:0,ammo:u.kind==="Archers"?24:0,x,y,tx:x,ty:y,facing:side==="rome"?0:180,formation:u.kind==="Cavalry"?"Wedge":u.kind==="Spears"?"Guard":"Line",attackTarget:null,charging:false,withdrawn:false,order:u.kind==="Archers"?"Skirmish":side==="rome"?"Move":walls&&!defensive?"Hold":"Attack",cooldown:0,damageCarry:0,width:"Standard",lockedFacing:null};
   };
-  return [...roman.slice(0,8).map((u,i)=>make(u,i,"rome")),...punic.slice(0,8).map((u,i)=>make(u,i,"carthage"))];
+  return autoDeploy([...roman.slice(0,8).map((u,i)=>make(u,i,"rome")),...punic.slice(0,8).map((u,i)=>make(u,i,"carthage"))],"Plains",false,walls&&!defensive);
 }
 
 /** Automatic pursuit uses bridges. A direct ground Move order can deliberately ford. */
@@ -55,6 +56,8 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
     const u={...previous,firedAt:null as number|null,firedMissile:false,cooldown:Math.max(0,(previous.cooldown??0)-dt)};
     if(!u.men||u.withdrawn)return u;
     const stats=unitDefinition(u.key)!;
+    // Explicit ground movement finishes before restoring the missile unit's safe default.
+    if(u.kind==="Archers"&&u.ammo>0&&u.order==="Move"&&distance(u,{x:u.tx,y:u.ty})<.5)u.order="Skirmish";
     const fleeing=u.order==="Retreat"||!active(u);
     if(fleeing){u.attackTarget=null;u.charging=false;u.tx=u.side==="rome"?-6:106;u.ty=u.y;}
     else {
@@ -142,7 +145,7 @@ export function tickBattle(state:BattleSnapshot,c:BattleContext):BattleSnapshot{
       const fresh=createBattle(side==="rome"?[due[i]]:[],side==="carthage"?[due[i]]:[],c.defensive,c.walls,c.general)[0];
       const x=side==="rome"?4:96,y=12+i%8*10;
       const faction=side==="rome"?c.playerFaction:c.enemyFaction;
-      units=[...units,{...fresh,morale:Math.min(150,fresh.morale+(faction?factionDefinition(faction).morale:0)),x,y,tx:side==="rome"?20:80,ty:y,order:"Attack"}];
+      units=[...units,{...fresh,morale:Math.min(150,fresh.morale+(faction?factionDefinition(faction).morale:0)),x,y,tx:side==="rome"?20:80,ty:y,order:fresh.kind==="Archers"?"Skirmish":"Attack"}];
     }
   }
   const objective=battleObjective(c.defensive,c.walls),player=units.filter(u=>u.side==="rome"&&active(u)&&u.order!=="Retreat"),enemy=units.filter(u=>u.side==="carthage"&&active(u));

@@ -2,6 +2,7 @@ import { buildingDefinitions, cityDefinitions, unitDefinition, unitDefinitions, 
 import { campaignMilestone, claimMandateReward, deterministicIndex } from "./simulation-engine.ts";
 import { doctrine, recruitmentCost, supplyConnected } from "./campaign-rules.ts";
 import { createBattle } from "./battle-engine.ts";
+import { autoDeploy } from "./deployment.ts";
 import type { Side, Kind } from "./game-content.ts";
 import type { Campaign, Army, City, General, RosterUnit, BattleUnit, BattleContext, BattleOutcome, CampaignDecision, MinorPower } from "./game-types.ts";
 
@@ -43,7 +44,7 @@ export function makeEncounter(c:Campaign,player:Army,enemy:Army|null,city:City,d
   const weather=c.season==="Winter"?"Fog":c.season==="Autumn"?"Rain":c.season==="Summer"&&city.id%2===0?"Heat":"Clear";
   const walls=city.buildings.includes("Walls")&&(defensive||player.siegeTurns<2);
   const t=theaterDefinition(c.theater),initial=createBattle(playerUnits.slice(0,8),enemyUnits.slice(0,8),defensive,walls,player.general,player.tradition,player.stance,player.supplies).map(u=>({...u,morale:Math.min(150,u.morale+doctrine(c.theater,u.side).morale+(u.side==="rome"?(player.general?.trait==="Inspirational"?10:player.general?.trait==="Cautious"?8:0)-(player.general&&player.general.loyalty<40?8:0):0))}));
-  return {difficulty:c.difficulty??"Commander",personality:doctrine(c.theater,"carthage").personality,playerFaction:t.playerFaction,enemyFaction:t.enemyFaction,supportArmies,garrisonOnly:player.id===-city.id,units:initial,
+  return {difficulty:c.difficulty??"Commander",personality:doctrine(c.theater,"carthage").personality,playerFaction:t.playerFaction,enemyFaction:t.enemyFaction,supportArmies,garrisonOnly:player.id===-city.id,units:autoDeploy(initial,terrain,false,walls&&!defensive),
     reinforcements:[...playerUnits.slice(8),...supports.filter(a=>a.side==="rome").flatMap(a=>a.units)],enemyReinforcements:[...enemyUnits.slice(8),...supports.filter(a=>a.side==="carthage").flatMap(a=>a.units)],playerGarrisonIds:playerGarrison.map(u=>u.id),enemyGarrisonIds:enemyGarrison.map(u=>u.id),
     playerArmyId:player.id,enemyArmyId:enemy?.id??null,targetCityId:city.id,defensive,walls,terrain,weather,season:c.season,general:player.general,stance:player.stance};
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { theaterDefinitions, unitDefinitions } from "../lib/game-content";
 import type { BattleContext, Difficulty } from "../lib/game-types";
 import { createCampaign, makeEncounter, makeRoster } from "../lib/campaign-engine";
+import { autoDeploy } from "../lib/deployment";
 import type { BattlefieldTerrain } from "../lib/simulation-engine";
 
 export type QuickBattleSettings={difficulty?:Difficulty;training?:boolean;theater:string;terrain:BattlefieldTerrain;weather:BattleContext["weather"];scenario:"Field"|"Defense"|"Assault";player:string[];enemy:string[]};
@@ -30,5 +31,5 @@ export function makeQuickBattle(settings:QuickBattleSettings){
   army.units=settings.player.map((key,i)=>makeRoster(key,100000+i,i+1));enemy.units=settings.enemy.map((key,i)=>makeRoster(key,200000+i,i+1));
   const target=campaign.cities.find(c=>c.id===(settings.scenario==="Defense"?army.cityId:enemy.cityId))!;
   const context=makeEncounter(campaign,army,enemy,target,settings.scenario==="Defense");
-  return {theater:settings.theater,target,context:{...context,training:settings.training,walls:settings.scenario!=="Field",terrain:settings.terrain,weather:settings.weather}};
+  return {theater:settings.theater,target,context:{...context,units:autoDeploy(context.units,settings.terrain,false,settings.scenario==="Assault"),training:settings.training,walls:settings.scenario!=="Field",terrain:settings.terrain,weather:settings.weather}};
 }
