@@ -6,11 +6,11 @@ import { battlefieldFeatureAt } from '../lib/simulation-engine';
 import { formationRadius } from '../lib/tactics';
 
 export const kindIcon=(kind:BattleUnit['kind'])=>({Infantry:'⚔',Spears:'♜',Cavalry:'♞',Archers:'➶'})[kind];
-export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void}){
+export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect'}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore'}){
   const routing=u.morale<moraleRule('rout_threshold');
   return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''}`}
     style={{left:`${u.x}%`,top:`${u.y}%`}}
-    aria-label={`${u.side==='rome'?'Your':'Enemy'} ${u.name}, ${u.kind}, ${u.men} soldiers. ${u.side==='carthage'?'Inspect unit':'Select unit'}`}
+    aria-label={`${u.side==='rome'?'Your':'Enemy'} ${u.name}, ${u.kind}, ${u.men} soldiers. ${u.side==='carthage'?(enemyAction==='attack'?'Attack with selected troops':enemyAction==='inspect'?'Inspect unit':'Attack unavailable'):'Select unit'}`}
     aria-pressed={u.side==='rome'?selected:inspected}
     title={`${u.name} · ${u.kind} · ${u.men}/${u.maxMen} soldiers · ${Math.round(u.morale)} morale · ${u.order}`}
     onPointerDown={e=>e.stopPropagation()} onClick={e=>onClick(e,u)}
@@ -24,7 +24,7 @@ export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onIns
 }
 
 export function BattleInspector({unit:u,context,canAttack,onAttack,onClose}:{unit:BattleUnit|null;context:BattleContext;canAttack:boolean;onAttack:()=>void;onClose:()=>void}){
-  if(!u)return <section className="battle-inspector empty" aria-label="Unit information"><strong>Know your formations</strong><p>⚔ Infantry · ♜ Spears · ♞ Cavalry · ➶ Missiles. Hover or tap a unit to inspect it. Tap an enemy, then choose Attack target to give an order.</p></section>;
+  if(!u)return <section className="battle-inspector empty" aria-label="Unit information"><strong>Know your formations</strong><p>⚔ Infantry · ♜ Spears · ♞ Cavalry · ➶ Missiles. Select your troops, then tap an enemy to attack. With nothing selected, tap an enemy to inspect it. Hover to preview unit details.</p></section>;
   const def=unitDefinition(u.key)!,feature=battlefieldFeatureAt(context.terrain,u.x,u.y);
   return <section className={`battle-inspector ${u.side}`} aria-label="Unit information">
     <div className="inspector-title"><span aria-hidden="true">{kindIcon(u.kind)}</span><div><small>{u.side==='rome'?'YOUR UNIT':'ENEMY UNIT'} · {u.kind}</small><strong>{u.name}</strong></div><button aria-label="Close unit information" onClick={onClose}>×</button></div>

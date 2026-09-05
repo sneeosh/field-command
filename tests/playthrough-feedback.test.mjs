@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {autoDeploy,attackOrder,battleUnitNumbers} from '../lib/deployment.ts';
+import {enemyClickIntent} from '../lib/battle-interaction.ts';
 import {createCampaign,makeRoster,makeEncounter} from '../lib/campaign-engine.ts';
 import {createBattle,advanceBattle,initialBattleSnapshot,tickBattle} from '../lib/battle-engine.ts';
 import {FieldTraining} from '../app/field-training.tsx';
@@ -15,6 +16,32 @@ import {battlefieldFeatureAt} from '../lib/simulation-engine.ts';
 
 const roster=(key,id)=>makeRoster(key,id,1),noop=()=>{};
 function context(){const c=createCampaign('italy');return makeEncounter(c,c.armies[0],c.armies[1],c.cities[3],false)}
+
+test('clicking an enemy attacks with a single or multiple friendly selection',()=>{
+  const units=createBattle([roster('hastati',1),roster('velites',2)],[roster('hastati',3)],false,false),enemy=units.find(u=>u.side==='carthage');
+  for(const selected of [[1],[2],[1,2]])assert.equal(enemyClickIntent(units,selected,enemy,'fight'),'attack');
+  assert.equal(attackOrder(units.find(u=>u.id===2)),'Skirmish');
+});
+test('clicking enemies without a friendly selection inspects during deployment and combat',()=>{
+  const units=createBattle([roster('hastati',1)],[roster('hastati',2)],false,false),enemy=units.find(u=>u.side==='carthage');
+  for(const phase of ['deploy','fight'])assert.equal(enemyClickIntent(units,[],enemy,phase),'inspect');
+  assert.equal(enemyClickIntent(units,[1],enemy,'deploy'),'ignore');
+});
+test('enemy click orders respect battle completion and uncommandable units',()=>{
+  const units=createBattle([roster('hastati',1)],[roster('hastati',2)],false,false),enemy=units.find(u=>u.side==='carthage');
+  assert.equal(enemyClickIntent(units,[1],enemy,'fight',true),'ignore');
+  assert.equal(enemyClickIntent(units,[1],units[0],'fight'),'ignore');
+  for(const change of [{men:0},{withdrawn:true},{morale:0}]){
+    assert.equal(enemyClickIntent(units,[1],{...enemy,...change},'fight'),'ignore');
+    assert.equal(enemyClickIntent(units.map(u=>u.id===1?{...u,...change}:u),[1],enemy,'fight'),'ignore');
+  }
+  assert.equal(enemyClickIntent(units,[999],enemy,'fight'),'inspect');
+});
+test('enemy badges announce the direct attack action when friendly troops are selected',()=>{
+  const units=createBattle([roster('hastati',1)],[roster('velites',2)],false,false),unit=units.find(u=>u.side==='carthage');
+  const html=renderToStaticMarkup(createElement(BattleUnitMarker,{unit,number:1,selected:false,inspected:false,onClick:noop,onInspect:noop,enemyAction:enemyClickIntent(units,[1],unit,'fight')}));
+  assert.match(html,/Attack with selected troops/);assert.doesNotMatch(html,/Inspect unit/);
+});
 
 test('missiles start in skirmish on either side and attack targeting preserves it',()=>{
   const units=createBattle([roster('velites',1)],[roster('velites',2)],false,false);
