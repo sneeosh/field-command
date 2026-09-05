@@ -1,6 +1,7 @@
 import { attackAspect, separateFormations, commandAI } from "./tactics.ts";
 import { autoDeploy } from "./deployment.ts";
-import { unitDefinition, factionDefinition, formationAttack, formationDefense, matchup, moraleRule, terrainRule } from "./game-content.ts";
+import { unitDefinition, factionDefinition, moraleRule, terrainRule } from "./game-content.ts";
+import { missileRange, combatModifiers, fallbackOrder } from './battle-rules.ts';
 import { battlefieldFeatureAt, battleObjective, hasExitedBattlefield } from "./simulation-engine.ts";
 import type { Side } from "./game-content.ts";
 import type { ArmyStance, General, RosterUnit, BattleUnit, BattleContext, BattleSnapshot, BattleOutcome } from "./game-types.ts";
@@ -15,11 +16,7 @@ const active = (u:BattleUnit) => u.men>0&&!u.withdrawn&&u.morale>=moraleRule("ro
 const ground = (u:{x:number;y:number},c:BattleContext) => terrainRule(battlefieldFeatureAt(c.terrain,u.x,u.y));
 
 export function effectiveRange(a:BattleUnit,b:BattleUnit,c:BattleContext){
-  const stats=unitDefinition(a.key)!;
-  // Cover reduces missile acquisition range, never melee reach. Movement and damage share this rule.
-  return a.kind==="Archers"&&a.ammo>0
-    ? Math.max(6.4,stats.range*(c.weather==="Fog"?.72:1)*ground(b,c).visibility)
-    : a.kind==="Archers"?6.4:stats.range;
+  return missileRange(a,b,c);
 }
 
 export function deploymentPositions(count:number,x:number,y:number){
@@ -53,17 +50,25 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
   // Sort for deterministic tie-breaking and read a single snapshot for every movement decision.
   const snapshot=[...old].sort((a,b)=>a.id-b.id);
   let next:BattleUnit[]=snapshot.map(previous=>{
-    const u={...previous,firedAt:null as number|null,firedMissile:false,cooldown:Math.max(0,(previous.cooldown??0)-dt)};
+    let u:BattleUnit={...previous,firedAt:null,firedMissile:false,cooldown:Math.max(0,(previous.cooldown??0)-dt),moraleCauseSeconds:Math.max(0,(previous.moraleCauseSeconds??0)-dt)};
+    if(!u.moraleCauseSeconds)u.moraleCauses=[];
     if(!u.men||u.withdrawn)return u;
     const stats=unitDefinition(u.key)!;
     // Explicit ground movement finishes before restoring the missile unit's safe default.
     if(u.kind==="Archers"&&u.ammo>0&&u.order==="Move"&&distance(u,{x:u.tx,y:u.ty})<.5)u.order="Skirmish";
     const fleeing=u.order==="Retreat"||!active(u);
-    if(fleeing){u.attackTarget=null;u.aiWaypoint=undefined;u.charging=false;u.tx=u.side==="rome"?-6:106;u.ty=u.y;}
+    if(fleeing){u.attackTarget=null;u.aiWaypoint=undefined;u.charging=false;u.chargeDistance=0;u.tx=u.side==="rome"?-6:106;u.ty=u.y;}
     else {
-      if(u.kind==="Archers"&&u.ammo<=0&&u.order==="Skirmish")u.order="Attack";
+      if(u.kind==="Archers"&&u.ammo<=0&&u.order==="Skirmish"){
+        if(u.ammoPolicy==='Melee')u.order='Attack';
+        else if(u.ammoPolicy==='Hold'){u.order='Hold';u.tx=u.x;u.ty=u.y;u.attackTarget=null;u.aiWaypoint=null;}
+        else u=fallbackOrder(u,snapshot);
+      }
       const enemies=snapshot.filter(t=>t.side!==u.side&&active(t));
       const preferred=enemies.find(t=>t.id===u.attackTarget);
+      if(u.side==='rome'&&u.pursue!==true&&u.attackTarget!==null&&!preferred&&['Attack','Charge','Skirmish'].includes(u.order)){
+        u.order='Hold';u.tx=u.x;u.ty=u.y;u.charging=false;u.chargeDistance=0;
+      }
       const auto=u.side==="carthage"||["Attack","Charge","Skirmish"].includes(u.order);
       const nearest=[...enemies].sort((a,b)=>{
         const priority=(t:BattleUnit)=>u.kind==="Cavalry"&&t.kind==="Archers"?-12:u.kind==="Spears"&&t.kind==="Cavalry"?-8:0;
@@ -71,8 +76,8 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
       })[0];
       const target=preferred??(auto?nearest:undefined);
       u.attackTarget=target?.id??null;
-      if(u.side==="carthage"&&u.order==="Hold"&&target&&distance(u,target)<24)u.order="Attack";
-      if(target&&u.order!=="Move"&&u.order!=="Hold"){
+      if(u.side==="carthage"&&u.order==="Hold"&&target&&distance(u,target)<24&&!(u.kind==='Spears'&&u.formation==='Guard')&&!(u.kind==='Archers'&&u.ammo<=0&&u.ammoPolicy!=='Melee'))u.order="Attack";
+      if(target&&u.order!=="Move"&&u.order!=="Hold"&&u.order!=="Fallback"){
         const d=distance(u,target),range=effectiveRange(u,target,c);
         if(u.order==="Skirmish"&&u.ammo>0&&d<10){
           const dx=u.x-target.x|| (u.side==="rome"?-1:1),dy=u.y-target.y,len=Math.hypot(dx,dy);
@@ -87,10 +92,15 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
     const dx=goal.x-u.x,dy=goal.y-u.y,d=Math.hypot(dx,dy),g=ground(u,c);
     if((fleeing||u.order!=="Hold")&&d>.15){
       const step=Math.min(d,stats.speed*3*(1-u.stamina/180)*g.movement*(u.formation==="Guard"?.78:1)*dt);
-      u.x+=dx/d*step;u.y=clamp(u.y+dy/d*step,5,95);u.facing=Math.atan2(dy,dx)*180/Math.PI;
+      const facing=Math.atan2(dy,dx)*180/Math.PI;
+      const turn=Math.abs(((facing-u.facing+540)%360)-180);
+      u.chargeDistance=u.charging&&turn<35&&!['Forest','River','Bridge'].includes(g.key)?Math.min(30,(u.chargeDistance??0)+step):0;
+      u.steadySeconds=0;
+      u.x+=dx/d*step;u.y=clamp(u.y+dy/d*step,5,95);if(u.order!=='Fallback')u.facing=facing;
       if(u.lockedFacing!=null)u.facing=u.lockedFacing;
       u.stamina=clamp(u.stamina+(c.weather==="Heat"?1.8:1.1)*g.fatigue*dt,0,100);
-    }else u.stamina=clamp(u.stamina-.8*dt,0,100);
+    }else {u.stamina=clamp(u.stamina-.8*dt,0,100);u.steadySeconds=(u.steadySeconds??0)+dt;}
+    if(u.order==='Fallback'&&distance(u,{x:u.tx,y:u.ty})<.5){u.order='Hold';u.tx=u.x;u.ty=u.y;u.attackTarget=null;}
     if(!fleeing)u.x=clamp(u.x,4,96);
     if(c.walls&&!c.gateOpen&&u.side===(c.defensive?"carthage":"rome")&&(c.defensive?previous.x>=35:previous.x<=70))u.x=c.defensive?Math.max(38,u.x):Math.min(67,u.x);
     if(fleeing&&hasExitedBattlefield(u.side,u.x))u.withdrawn=true;
@@ -104,25 +114,24 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
     const targets=next.filter(t=>t.side!==u.side&&active(t)&&distance(u,t)<=effectiveRange(u,t,c)).sort((a,b)=>(a.id===u.attackTarget?-1:b.id===u.attackTarget?1:distance(u,a)-distance(u,b)||a.id-b.id));
     const t=targets[0];if(!t)continue;
     const missile=u.kind==="Archers"&&u.ammo>0&&distance(u,t)>6.4;
-    if(missile&&(u.cooldown??0)>0)continue;
-    const ag=ground(u,c),tg=ground(t,c),stats=unitDefinition(u.key)!;
+    if(missile&&(u.holdFire||(u.cooldown??0)>0))continue;
+    const ag=ground(u,c),stats=unitDefinition(u.key)!;
     const aspect=attackAspect(u,t),flank=aspect!=="Front";
-    const charge=u.charging&&u.kind==="Cavalry"&&!["Forest","River","Bridge"].includes(ag.key)?1.35:1;
-    const wallSide=c.defensive?"rome":"carthage",inWalls=c.defensive?t.x<35:t.x>70;
-    const wall=c.walls&&t.side===wallSide&&inWalls?.76:1;
-    const frontage=missile?(u.width==="Wide"?1.08:u.width==="Narrow"?.92:1):(u.width==="Narrow"?1.06:u.width==="Wide"?.95:1);
-    const trait=u.side==="rome"?c.general?.trait:undefined;
-    const loss=frontage*(trait==="Bold"&&!missile?1.08:trait==="Cautious"?.97:1)*stats.attack*(u.men/u.maxMen)*matchup(u.kind,t.kind)*formationAttack(u.formation)*formationDefense(t.formation)*(aspect==="Rear"?1.5:flank?1.2:1)*charge*Math.max(.55,1-u.stamina/180)*(missile?ag.missile:ag.melee)*tg.incomingDamage*(missile&&c.weather==="Rain"?.76:1)*wall*(1+u.experience*.08)*(missile?6:3*dt);
+    const factors=combatModifiers(u,t,c,missile);
+    const loss=stats.attack*factors.reduce((n,m)=>n*m.factor,1)*(missile?6:3*dt);
+    if(factors.some(m=>m.label==='Braced spear front'&&m.factor<1))t.bracedHits=(t.bracedHits??0)+1;
     u.damageDealt=(u.damageDealt??0)+Math.min(t.men,loss);u.flankHits=(u.flankHits??0)+(flank?1:0);u.terrainHits=(u.terrainHits??0)+((missile?ag.missile:ag.melee)>1?1:0);u.missileHits=(u.missileHits??0)+(missile?1:0);
     damage.set(t.id,(damage.get(t.id)??0)+loss);
     morale.set(t.id,(morale.get(t.id)??0)+(flank?moraleRule("surrounded")*dt:0));
     if(missile){u.ammo--;u.cooldown=2;}
-    u.firedAt=t.id;u.firedMissile=missile;u.charging=false;u.stamina=clamp(u.stamina+.8*ag.fatigue*dt,0,100);
+    u.firedAt=t.id;u.firedMissile=missile;u.charging=false;u.chargeDistance=0;u.stamina=clamp(u.stamina+.8*ag.fatigue*dt,0,100);
   }
   for(const u of next){
     const total=(u.damageCarry??0)+(damage.get(u.id)??0),loss=Math.min(u.men,Math.floor(total));
     u.damageCarry=total-Math.floor(total);u.men-=loss;
     u.morale=clamp(u.morale-loss*moraleRule("casualty")-(morale.get(u.id)??0),0,150);
+    const causes=[...(loss?['Taking casualties']:[]),...((morale.get(u.id)??0)>0?['Flank or rear exposed']:[])];
+    if(causes.length){u.moraleCauses=causes;u.moraleCauseSeconds=6;}
   }
   return next;
 }

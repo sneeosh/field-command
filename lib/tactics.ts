@@ -34,6 +34,11 @@ export function commandAI(units:BattleUnit[],c:BattleContext,elapsed:number):Bat
   const archers=allies.filter(u=>u.kind==="Archers"&&u.ammo>0),line=allies.filter(u=>u.kind!=="Archers");
   return units.map(u=>{
     if(u.side!=="carthage"||!active(u)||u.order==="Retreat")return u;
+    if(u.kind==='Archers'&&u.ammo<=0&&u.ammoPolicy!=='Melee'){
+      // An exhausted missile-only army disengages instead of waiting out the battle clock.
+      if(u.order==='Hold'&&!allies.some(a=>a.kind!=='Archers'||a.ammo>0))return {...u,order:'Retreat',attackTarget:null,aiWaypoint:null,tx:106,ty:u.y};
+      return u;
+    }
     const nearest=[...enemies].sort((a,b)=>distance(u,a)-distance(u,b)||a.id-b.id)[0];
     const intruder=c.walls&&!c.defensive?enemies.find(e=>e.x>70):undefined;
     const threatenedArcher=archers.find(a=>enemies.some(e=>e.kind==="Cavalry"&&distance(e,a)<22));
@@ -48,7 +53,8 @@ export function commandAI(units:BattleUnit[],c:BattleContext,elapsed:number):Bat
     else if(veteran&&u.kind==="Archers"){target=enemies.filter(e=>e.kind!=="Spears").sort((a,b)=>(a.morale+distance(u,a))-(b.morale+distance(u,b)))[0]??target;role="Focus volleys";}
     if(intruder)role="Contest breach";
     const waypoint=tactical&&role==="Flank"&&distance(u,target)>18&&u.x>target.x+7?{x:target.x+8,y:Math.max(8,Math.min(92,target.y+(target.y<50?-16:16)))}:null;
-    return {...u,attackTarget:target.id,order:u.kind==="Archers"&&u.ammo>0?"Skirmish":"Attack",aiRole:role,aiWaypoint:waypoint,formation:tactical&&u.kind==="Spears"?"Guard":u.formation,width:c.terrain==="River"?"Narrow":u.width};
+    const brace=tactical&&u.kind==='Spears'&&target.kind==='Cavalry'&&distance(u,target)<16&&(['Attack','Charge'].includes(target.order)||distance(u,target)<6);
+    return {...u,attackTarget:target.id,order:brace?'Hold':u.kind==="Archers"&&u.ammo>0?"Skirmish":"Attack",...(brace?{tx:u.x,ty:u.y}:{}),aiRole:role,aiWaypoint:waypoint,formation:tactical&&u.kind==="Spears"?"Guard":u.formation,width:c.terrain==="River"?"Narrow":u.width};
   });
 }
 

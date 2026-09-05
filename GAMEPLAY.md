@@ -12,15 +12,28 @@
 
 - Click a cohort to select it; Shift-click to toggle additional cohorts. Drag a box or use Select all. Ctrl/Cmd + 1–4 stores groups; 1–4 recalls them.
 - During deployment, click inside the red zone to reposition selected cohorts. Entire formations are constrained to the deployment bounds.
-- During combat, click ground to move or click an enemy to attack. Orders include Hold, Attack, Skirmish, Charge, and Retreat. Space pauses; changing browser tabs pauses automatically.
-- Hills improve combat, woods conceal troops, and rivers slow and expose crossings. Automatic pursuit chooses bridges; explicit ground orders can ford the river. The selected-unit panel shows current modifiers.
+- During combat, select your troops then click an enemy to attack; with nothing selected, click an enemy to inspect it. Click ground to move. Orders include Hold, Attack, Skirmish, Charge, Fallback, and Retreat. Space pauses; changing browser tabs pauses automatically. Issuing an order preserves the current pause state.
+- Hills improve combat, woods reduce target acquisition range, and rivers slow and expose crossings. Automatic pursuit chooses bridges; explicit ground orders can ford the river. The selected-unit panel shows current modifiers. There is not yet terrain-obstructed line of sight or fog-of-war.
 - Eight cohorts per side deploy initially. All additional cohorts arrive in waves beginning at 25 seconds. Retreating and undeployed survivors are retained in campaign resolution where retreat is possible.
 - Field battles require routing the enemy. Defense requires 120 seconds holding the left zone without enemy occupation. Assaults require 12 continuous uncontested seconds inside the breach. Battles end in withdrawal after ten simulated minutes.
-- Missile volleys use ammunition; depleted missile units can fight in melee. Damage is simultaneous with fractional casualty accumulation. Movement and attacks use the same target acquisition range.
+- Missile volleys use ammunition. Depleted skirmishers fall back behind friendly infantry by default, facing the enemy; choose Hold or Melee in their ammunition policy to override this. An explicit Attack with empty ammunition also permits melee. Hold fire conserves missiles but does not disable melee self-defense.
+- Fallback stays inside the field; Retreat leaves it. Cohorts stop when their assigned target breaks unless Chase new targets is enabled. Post-battle pursuit requires steady cavalry below 70% fatigue and previews both enemy casualties and cavalry losses. Losses persist in campaigns; enemy survivors can retreat to a connected friendly city.
+- Gold paths show movement waypoints, red lines show assigned targets, and pale range previews show maximum missile range before cover. Command feedback explains movement, reloading, gate approaches, bracing, and ammunition policies. Damage factors use the same calculation as the simulation, not estimated win odds.
+- Guard spears brace after two stationary seconds in Hold, reducing frontal cavalry damage and negating charge impact. Cavalry need eight battlefield units of straight run-up, clear ground, and fatigue below 70%. Turning, reforming, or changing frontage resets readiness.
+- Morale is named Steady, Wavering, Breaking, or Routing. Recent losses and exposed flanks explain morale changes. A non-routed cohort below 70 morale can rally once, gaining up to 12 morale, when no active enemy is within 14 battlefield units.
+- Damage is simultaneous with fractional casualty accumulation. Movement and attacks use the same target acquisition range.
 
 ## Battle Lab
 
 Quick battle supports Italy, Greece, and Japan; Plains, Hills, Forest, and River terrain; Clear, Rain, Fog, and Heat weather; and field, defense, or assault scenarios. Choose up to 16 cohorts for each side.
+
+Three tactical lessons provide theater-specific armies for missile screening, spear bracing, and cavalry flanking. Their success indicators use recorded volleys, braced hits, and flank attacks; finish or withdraw from the battle to return to the Lab. Lessons do not affect your campaign.
+
+## Persistent campaign ground
+
+The optional `terrain` column in Cities Markdown selects Plains, Hills, Forest, or River for that settlement's battles. It no longer rotates with the campaign turn. Older custom tables without the column default to Plains. These are abstract battlefield templates, not a surveyed reconstruction of each historical site.
+
+Enemy attack planning estimates defending troops, road reinforcements, supplies, walls, and exposure left at home. It is a target-selection heuristic, not a full strategic planner. The remaining work is tracked in [ROADMAP.md](ROADMAP.md).
 
 ## Development checks
 

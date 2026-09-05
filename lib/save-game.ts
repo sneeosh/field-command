@@ -1,4 +1,4 @@
-import { unitDefinition, theaterDefinitions, buildingDefinitions, defaultContentVersion } from "./game-content.ts";
+import { unitDefinition, theaterDefinitions, buildingDefinitions, defaultContentVersion, compatibleContentVersion, contentVersion } from "./game-content.ts";
 import type { Campaign, BattleContext, BattleSnapshot, BattleReport } from "./game-types.ts";
 
 export type SavedGame={contentVersion:string;campaign:Campaign;battle?:BattleContext|null;snapshot?:BattleSnapshot|null;report?:BattleReport|null;savedAt?:string};
@@ -26,11 +26,12 @@ export function validateCampaign(c:Campaign){
 export function decodeSave(raw:string,version:string):SavedGame{
   const saved=JSON.parse(raw) as SavedGame;
   // Upgrade the immediately previous shipped rules; custom rule fingerprints still must match.
-  if(saved.contentVersion==="2gs0g7"&&version===defaultContentVersion)saved.contentVersion=version;
+  if((["2gs0g7","vt6q50"].includes(saved.contentVersion)&&version===defaultContentVersion)||(saved.contentVersion===compatibleContentVersion&&version===contentVersion))saved.contentVersion=version;
   if(saved.contentVersion!==version)throw new Error("This save uses different game rules. Restore its matching rules before loading it.");
   validateCampaign(saved.campaign);
   if(saved.battle){
     const b=saved.battle,s=saved.snapshot;
+    if(b.lesson!==undefined&&!['screen','brace','flank'].includes(b.lesson))throw new Error('Invalid tactical lesson.');
     if(!Array.isArray(b.units)||!Array.isArray(b.reinforcements)||!saved.campaign.cities.some(c=>c.id===b.targetCityId))throw new Error("Invalid saved battle.");
     if(!["Plains","Hills","Forest","River"].includes(b.terrain)||!["Clear","Rain","Fog","Heat"].includes(b.weather)||typeof b.defensive!=="boolean"||typeof b.walls!=="boolean"||b.enemyReinforcements!==undefined&&!Array.isArray(b.enemyReinforcements))throw new Error("Invalid saved battlefield.");
     if(s&&(!Array.isArray(s.units)||![s.elapsed,s.objectiveProgress].every(Number.isFinite)||!["deploy","fight"].includes(s.phase)))throw new Error("Invalid battle checkpoint.");
@@ -44,7 +45,13 @@ export function decodeSave(raw:string,version:string):SavedGame{
       if(new Set(list.map(u=>u.id)).size!==list.length)throw new Error("Duplicate battlefield cohorts.");
       for(const u of list)if(!unitDefinition(u.key)||![u.id,u.men,u.maxMen,u.experience,u.upkeep].every(Number.isFinite)||!Number.isInteger(u.upkeep)||u.upkeep<0||u.men<0||u.men>u.maxMen||u.maxMen<=0)throw new Error("Invalid battlefield cohort.");
     }
-    for(const u of [...b.units,...(s?.units??[])])if(!["rome","carthage"].includes(u.side)||!["Line","Guard","Wedge"].includes(u.formation)||!["Move","Attack","Hold","Skirmish","Charge","Retreat"].includes(u.order)||![u.stamina,u.facing].every(Number.isFinite))throw new Error("Invalid battlefield orders.");
+    for(const u of [...b.units,...(s?.units??[])]){
+      if(!["rome","carthage"].includes(u.side)||!["Line","Guard","Wedge"].includes(u.formation)||!["Move","Attack","Hold","Skirmish","Charge","Retreat","Fallback"].includes(u.order)||![u.stamina,u.facing].every(Number.isFinite))throw new Error("Invalid battlefield orders.");
+      if(u.ammoPolicy!==undefined&&!["Fallback","Hold","Melee"].includes(u.ammoPolicy))throw new Error("Invalid ammunition policy.");
+      for(const key of ['holdFire','pursue','rallyUsed'] as const)if(u[key]!==undefined&&typeof u[key]!=='boolean')throw new Error("Invalid tactical policy.");
+      for(const key of ['chargeDistance','steadySeconds','moraleCauseSeconds','bracedHits'] as const)if(u[key]!==undefined&&(!Number.isFinite(u[key])||u[key]!<0||u[key]!>10000))throw new Error("Invalid tactical counter.");
+      if(u.moraleCauses!==undefined&&(!Array.isArray(u.moraleCauses)||u.moraleCauses.length>5||u.moraleCauses.some(c=>typeof c!=='string'||c.length>150)))throw new Error("Invalid morale explanation.");
+    }
   }
   return saved;
 }

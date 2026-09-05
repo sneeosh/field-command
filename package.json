@@ -10,7 +10,7 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --import ./tests/register-loader.mjs --test tests/*.test.mjs",
-    "test:engine": "node --import ./tests/register-loader.mjs --test tests/game-engine.test.mjs tests/roadmap.test.mjs",
+    "test:engine": "node --import ./tests/register-loader.mjs --test tests/game-engine.test.mjs tests/roadmap.test.mjs tests/battle-clarity.test.mjs tests/campaign-planning.test.mjs tests/browser-playthrough.test.mjs tests/playthrough-feedback.test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.game.json",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"

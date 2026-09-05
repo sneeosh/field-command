@@ -4,6 +4,7 @@ import type { BattleContext, BattleUnit } from '../lib/game-types';
 import { moraleRule, unitDefinition, terrainRule } from '../lib/game-content';
 import { battlefieldFeatureAt } from '../lib/simulation-engine';
 import { formationRadius } from '../lib/tactics';
+import {moraleState} from '../lib/battle-rules';
 
 export const kindIcon=(kind:BattleUnit['kind'])=>({Infantry:'⚔',Spears:'♜',Cavalry:'♞',Archers:'➶'})[kind];
 export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect',crowded=false,detailed=false}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore';crowded?:boolean;detailed?:boolean}){
@@ -29,7 +30,8 @@ export function BattleInspector({unit:u,context,canAttack,onAttack,onClose}:{uni
   return <section className={`battle-inspector ${u.side}`} aria-label="Unit information">
     <div className="inspector-title"><span aria-hidden="true">{kindIcon(u.kind)}</span><div><small>{u.side==='rome'?'YOUR UNIT':'ENEMY UNIT'} · {u.kind}</small><strong>{u.name}</strong></div><button aria-label="Close unit information" onClick={onClose}>×</button></div>
     <dl><div><dt>Soldiers</dt><dd>{u.men}/{u.maxMen}</dd></div><div><dt>Morale</dt><dd>{Math.round(u.morale)}</dd></div><div><dt>Fatigue</dt><dd>{Math.round(u.stamina)}%</dd></div>{u.kind==='Archers'&&<div><dt>Ammo</dt><dd>{u.ammo}</dd></div>}<div><dt>Order</dt><dd>{u.withdrawn?'Withdrawn':u.morale<moraleRule('rout_threshold')?'Routing':u.order}</dd></div><div><dt>Formation</dt><dd>{u.formation}</dd></div></dl>
+    <p>{moraleState(u)}{u.moraleCauses?.length?` — ${u.moraleCauses.join(' · ')}`:''}</p>
     <p>{def.note} · {feature}: {terrainRule(feature).note}</p>
-    {u.side==='carthage'&&<button className="inspect-attack" disabled={!canAttack} onClick={onAttack}>{canAttack?'Attack target with selected units':'Select your troops and begin battle to attack'}</button>}
+    {u.side==='carthage'&&<button className="inspect-attack" disabled={!canAttack} onClick={onAttack}>{canAttack?'Attack target with selected units':'Attack requires selected troops and an active battle'}</button>}
   </section>;
 }
