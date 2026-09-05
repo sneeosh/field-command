@@ -42,6 +42,17 @@ test('enemy badges announce the direct attack action when friendly troops are se
   const html=renderToStaticMarkup(createElement(BattleUnitMarker,{unit,number:1,selected:false,inspected:false,onClick:noop,onInspect:noop,enemyAction:enemyClickIntent(units,[1],unit,'fight')}));
   assert.match(html,/Attack with selected troops/);assert.doesNotMatch(html,/Inspect unit/);
 });
+test('crowded battle markers retain accessible identity while allowing compact labels',()=>{
+  const unit=createBattle([roster('hastati',1)],[],false,false)[0];
+  const html=renderToStaticMarkup(createElement(BattleUnitMarker,{unit,number:1,selected:false,inspected:false,onClick:noop,onInspect:noop,crowded:true}));
+  assert.match(html,/crowded/);assert.match(html,/Your Hastati I, Infantry, 120 soldiers/);
+});
+test('battle counts stay above formation art and reports fit their container',async()=>{
+  const css=await readFile(new URL('../app/globals.css',import.meta.url),'utf8');
+  assert.match(css,/\.token-name,\.token-count\{z-index:2\}/);
+  assert.match(css,/\.token-count\{position:relative\}/);
+  assert.match(css,/\.post-battle>section\{width:min\(760px,100%\);min-width:0\}/);
+});
 
 test('missiles start in skirmish on either side and attack targeting preserves it',()=>{
   const units=createBattle([roster('velites',1)],[roster('velites',2)],false,false);

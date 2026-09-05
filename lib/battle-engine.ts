@@ -59,7 +59,7 @@ export function advanceBattle(old:BattleUnit[],dt:number,c:BattleContext & {gate
     // Explicit ground movement finishes before restoring the missile unit's safe default.
     if(u.kind==="Archers"&&u.ammo>0&&u.order==="Move"&&distance(u,{x:u.tx,y:u.ty})<.5)u.order="Skirmish";
     const fleeing=u.order==="Retreat"||!active(u);
-    if(fleeing){u.attackTarget=null;u.charging=false;u.tx=u.side==="rome"?-6:106;u.ty=u.y;}
+    if(fleeing){u.attackTarget=null;u.aiWaypoint=undefined;u.charging=false;u.tx=u.side==="rome"?-6:106;u.ty=u.y;}
     else {
       if(u.kind==="Archers"&&u.ammo<=0&&u.order==="Skirmish")u.order="Attack";
       const enemies=snapshot.filter(t=>t.side!==u.side&&active(t));

@@ -213,6 +213,19 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .battle-token.inspected .token-badge{box-shadow:0 0 0 3px #fff}
 .battle-token:focus-visible{outline:3px solid white;outline-offset:4px}
 .battle-token.routing{opacity:.7;filter:grayscale(.6)}
+.field-selection{display:none}
+.token-ranks,.token-facing{z-index:0}
+.token-badge{z-index:1}
+.token-name,.token-count{z-index:2}
+.token-count{position:relative}
+.battle-token.crowded:not(.detailed) .token-name,.battle-token.crowded:not(.detailed) .token-count{display:none}
+.post-battle header small{font-size:12px;letter-spacing:.12em}
+.post-battle{grid-template-columns:minmax(0,1fr)}
+.post-battle>section{width:min(760px,100%);min-width:0}
+.post-battle header p,.report-honors p{font-size:16px;line-height:1.5}
+.report-objective span,.report-objective em,.casualty-columns small{font-size:12px;letter-spacing:.06em}
+.casualty-columns span,.casualty-columns p{font-size:14px;line-height:1.4}
+.post-battle>section>button{min-height:44px;font-size:14px;letter-spacing:.06em}
 .unit-symbol>small{display:block;font:12px Arial;color:#483722;margin-top:3px}
 .battle-inspector{border:1px solid #958154;border-top:3px solid var(--roman);padding:12px;background:#242b24;color:#f1e4c7;min-width:0}
 .battle-inspector.carthage{border-top-color:#7bc3be}
@@ -228,14 +241,18 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .inspect-attack:disabled{background:#424438;color:#c4c4b6;cursor:default}
 @media(max-width:1050px){
   .battle-layout{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .battle-layout>.field-wrap{grid-template-rows:auto minmax(400px,60dvh) auto auto}
+  .field-selection{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#242b24;padding:8px;color:#f1e4c7;font:14px Arial}
+  .field-selection span{margin-right:auto}
+  .field-selection button{min-height:44px;padding:8px;border:1px solid #b59b61;background:#433c2a;color:#fff1ca;font:14px Arial;cursor:pointer}
+  .battle-layout>.field-wrap{grid-template-rows:auto auto minmax(400px,60dvh) auto auto}
   .battle-layout>.unit-panel,.battle-layout>.orders-panel{max-height:none;overflow:visible}
 }
 @media(max-width:700px){
   .tutorial{top:12px;max-height:calc(100dvh - 24px);width:calc(100vw - 24px);padding:16px}
+  .post-battle{padding:14px}
   .tutorial button{width:100%}
   .battle-layout{grid-template-columns:minmax(0,1fr)}
-  .battle-layout>.field-wrap{grid-column:1;grid-template-rows:auto minmax(400px,60dvh) auto auto}
+  .battle-layout>.field-wrap{grid-column:1;grid-template-rows:auto auto minmax(400px,60dvh) auto auto}
   .battle-token{width:40px;height:44px}.token-name{display:none}
   .battle-token.selected .token-name,.battle-token.inspected .token-name{display:block}
   .battle-inspector{padding:12px}

@@ -6,9 +6,9 @@ import { battlefieldFeatureAt } from '../lib/simulation-engine';
 import { formationRadius } from '../lib/tactics';
 
 export const kindIcon=(kind:BattleUnit['kind'])=>({Infantry:'⚔',Spears:'♜',Cavalry:'♞',Archers:'➶'})[kind];
-export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect'}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore'}){
+export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect',crowded=false,detailed=false}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore';crowded?:boolean;detailed?:boolean}){
   const routing=u.morale<moraleRule('rout_threshold');
-  return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''}`}
+  return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''} ${crowded?'crowded':''} ${detailed?'detailed':''}`}
     style={{left:`${u.x}%`,top:`${u.y}%`}}
     aria-label={`${u.side==='rome'?'Your':'Enemy'} ${u.name}, ${u.kind}, ${u.men} soldiers. ${u.side==='carthage'?(enemyAction==='attack'?'Attack with selected troops':enemyAction==='inspect'?'Inspect unit':'Attack unavailable'):'Select unit'}`}
     aria-pressed={u.side==='rome'?selected:inspected}

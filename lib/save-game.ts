@@ -18,7 +18,7 @@ export function validateCampaign(c:Campaign){
   for(const a of c.armies)if(!["rome","carthage"].includes(a.side)||a.targetCityId!==null&&!cityIds.has(a.targetCityId)||a.siegeTarget!==null&&!cityIds.has(a.siegeTarget))throw new Error("Invalid army destination.");
   const units=[...c.armies.flatMap(a=>a.units),...c.cities.flatMap(city=>city.garrison)];
   if(new Set(units.map(u=>u.id)).size!==units.length)throw new Error("Duplicate cohorts in save.");
-  for(const u of units)if(!unitDefinition(u.key)||![u.men,u.maxMen,u.upkeep,u.id].every(Number.isFinite)||u.men<0||u.men>u.maxMen||u.maxMen<=0)throw new Error("Invalid cohort in save.");
+  for(const u of units)if(!unitDefinition(u.key)||![u.men,u.maxMen,u.upkeep,u.id].every(Number.isFinite)||![u.id,u.men,u.maxMen,u.upkeep].every(Number.isInteger)||u.upkeep<0||u.men<0||u.men>u.maxMen||u.maxMen<=0)throw new Error("Invalid cohort in save.");
   const queued=c.cities.flatMap(city=>city.recruitment),ids=[...units,...queued].map(u=>u.id);
   if(new Set(ids).size!==ids.length||ids.some(id=>!Number.isInteger(id)||id>=c.nextUnitId)||c.armies.some(a=>a.side==="rome"&&a.id>=c.nextArmyId))throw new Error("Invalid or duplicate save identifiers.");
 }
@@ -38,9 +38,11 @@ export function decodeSave(raw:string,version:string):SavedGame{
     if(b.supportArmies!==undefined&&(!Array.isArray(b.supportArmies)||b.supportArmies.some(a=>!Array.isArray(a.unitIds)||!saved.campaign.armies.some(army=>army.id===a.armyId))))throw new Error("Invalid reinforcing army.");
     for(const u of [...b.units,...(s?.units??[])])if(!unitDefinition(u.key)||![u.x,u.y,u.men,u.morale,u.tx,u.ty,u.ammo].every(Number.isFinite))throw new Error("Invalid battlefield cohort.");
     for(const u of [...b.units,...(s?.units??[])])if(u.width!==undefined&&!["Narrow","Standard","Wide"].includes(u.width)||u.lockedFacing!=null&&!Number.isFinite(u.lockedFacing))throw new Error("Invalid formation settings.");
+    const encounterIds=[...b.units,...b.reinforcements,...(b.enemyReinforcements??[])].map(u=>u.id);
+    if(new Set(encounterIds).size!==encounterIds.length)throw new Error("Duplicate deployed and reserve cohorts.");
     for(const list of [b.units,s?.units??[],b.reinforcements,b.enemyReinforcements??[]]){
       if(new Set(list.map(u=>u.id)).size!==list.length)throw new Error("Duplicate battlefield cohorts.");
-      for(const u of list)if(!unitDefinition(u.key)||![u.id,u.men,u.maxMen,u.experience].every(Number.isFinite)||u.men<0||u.men>u.maxMen||u.maxMen<=0)throw new Error("Invalid battlefield cohort.");
+      for(const u of list)if(!unitDefinition(u.key)||![u.id,u.men,u.maxMen,u.experience,u.upkeep].every(Number.isFinite)||!Number.isInteger(u.upkeep)||u.upkeep<0||u.men<0||u.men>u.maxMen||u.maxMen<=0)throw new Error("Invalid battlefield cohort.");
     }
     for(const u of [...b.units,...(s?.units??[])])if(!["rome","carthage"].includes(u.side)||!["Line","Guard","Wedge"].includes(u.formation)||!["Move","Attack","Hold","Skirmish","Charge","Retreat"].includes(u.order)||![u.stamina,u.facing].every(Number.isFinite))throw new Error("Invalid battlefield orders.");
   }
