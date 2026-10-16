@@ -156,6 +156,37 @@ export function SoldierSpriteDefs(){
           <path d="M-2.2 -0.8 Q0 1 2.2 -0.8" fill="none" className="spr-horns"/>
         </g>
       </symbol>
+      {/* Casualties */}
+      <symbol id="spr-fallen" viewBox="-12 -24 24 36">
+        <ellipse cx="1" cy="1" rx="8" ry="4.4" fill="#3a1512" opacity=".3"/>
+        <ellipse cx="0" cy="0" rx="3.4" ry="6.8" transform="rotate(70)" className="spr-body"/>
+        <circle cx="6.4" cy="-2.3" r="2.4" className="spr-helm"/>
+        <rect x="-10" y="3" width="9" height="3.2" rx="1.4" transform="rotate(24 -5.5 4.6)" className="spr-shield"/>
+        <path d="M-2 -6 L6 -9" stroke="#d9d6cc" strokeWidth=".9" strokeLinecap="round"/>
+      </symbol>
+      <symbol id="spr-fallen-round" viewBox="-12 -24 24 36">
+        <ellipse cx="1" cy="1" rx="8" ry="4.4" fill="#3a1512" opacity=".3"/>
+        <ellipse cx="0" cy="0" rx="3.4" ry="6.8" transform="rotate(70)" className="spr-body"/>
+        <circle cx="6.4" cy="-2.3" r="2.4" className="spr-helm"/>
+        <circle cx="-6" cy="4.5" r="4.4" className="spr-shield"/>
+        <path d="M-4 -7 L9 -10" stroke="#6b4a2a" strokeWidth=".8"/>
+      </symbol>
+      <symbol id="spr-fallen-flag" viewBox="-12 -24 24 36">
+        <ellipse cx="1" cy="1" rx="8" ry="4.4" fill="#3a1512" opacity=".3"/>
+        <path d="M-9 6 L8 2" stroke="#6b4a2a" strokeWidth=".5"/>
+        <rect x="-9.6" y="3.4" width="5.6" height="3.4" transform="rotate(-13 -6.8 5.1)" className="spr-flag"/>
+        <ellipse cx="0" cy="0" rx="3.4" ry="6.8" transform="rotate(70)" className="spr-body"/>
+        <circle cx="6.4" cy="-2.3" r="2.6" className="spr-helm"/>
+        <path d="M-4 -7 L9 -10" stroke="#6b4a2a" strokeWidth=".8"/>
+      </symbol>
+      <symbol id="spr-fallen-cav" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="0" rx="10" ry="6" fill="#3a1512" opacity=".3"/>
+        <ellipse cx="0" cy="0" rx="9" ry="4" transform="rotate(-8)" className="spr-horse"/>
+        <ellipse cx="-9.6" cy="-2.6" rx="3.6" ry="1.8" transform="rotate(-30 -9.6 -2.6)" className="spr-horse"/>
+        <path d="M-6 2.6 L-8 7 M-2 3.4 L-3 8 M4 3.4 L5 8 M7.6 2.4 L10 6.4" className="spr-tail"/>
+        <ellipse cx="3" cy="-6.2" rx="2.4" ry="4.6" transform="rotate(60 3 -6.2)" className="spr-body"/>
+        <circle cx="7.4" cy="-8.4" r="2" className="spr-helm"/>
+      </symbol>
     </defs>
   </svg>;
 }
@@ -177,11 +208,24 @@ type Spot={x:number;y:number;a:number;sprite:string};
 
 function jitter(seed:number,i:number){const v=Math.sin(seed*91.7+i*12.9898)*43758.5453;return v-Math.floor(v)-.5}
 
+export const unitFinish=(key:string)=>LOOK[key]?.finish??"";
+export function unitSprite(u:Pick<BattleUnit,"key"|"kind"|"side">){
+  const roman=u.kind==="Infantry"?"spr-inf":u.kind==="Spears"?(u.side==="rome"?"spr-spear":"spr-spear-round"):u.kind==="Archers"?"spr-skirm":"spr-cav";
+  return LOOK[u.key]?.sprite??roman;
+}
+// The casualty figure that matches a unit's look.
+export function fallenSprite(u:Pick<BattleUnit,"key"|"kind"|"side">){
+  const s=unitSprite(u);
+  if(u.kind==="Cavalry")return "spr-fallen-cav";
+  if(["spr-ashi-yari","spr-yumi","spr-samurai","spr-monk"].includes(s))return "spr-fallen-flag";
+  if(["spr-spear-round","spr-hoplite","spr-pike","spr-skirm","spr-pelta"].includes(s))return "spr-fallen-round";
+  return "spr-fallen";
+}
+
 export function soldierLayout(u:Pick<BattleUnit,"id"|"key"|"kind"|"side"|"men"|"formation"|"width">,routing:boolean,fighting:boolean,frontage:number):Spot[]{
   const cav=u.kind==="Cavalry";
   const count=Math.max(3,Math.min(cav?12:30,Math.round(u.men/(cav?4:5))));
-  const roman=u.kind==="Infantry"?"spr-inf":u.kind==="Spears"?(u.side==="rome"?"spr-spear":"spr-spear-round"):u.kind==="Archers"?"spr-skirm":"spr-cav";
-  const base=LOOK[u.key]?.sprite??roman;
+  const base=unitSprite(u);
   const guard=u.formation==="Guard"&&!cav;
   const sprite=routing?"spr-rout":guard&&(base==="spr-spear"||base==="spr-spear-round")?"spr-brace":base;
   const dx=cav?15:guard?9.5:u.kind==="Archers"?13:10.5, dy=cav?21:guard?11:u.kind==="Archers"?15:12.5;

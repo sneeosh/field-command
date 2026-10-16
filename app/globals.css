@@ -608,3 +608,39 @@ select,input,textarea{border-radius:0}
 .soldiers.robe,.battle-token.carthage .soldiers.robe{--body:#2b2522;--hood:#ece4d2}
 .soldiers.archers.lacquer,.battle-token.carthage .soldiers.archers.lacquer{--body:#3a302a}
 .unit-portrait{--pt-linen:#e2d6b8;--pt-lacquer:#4a3d35;--pt-hat:#5a4632;--pt-robe:#3a3230}
+
+/* Fallen soldiers stay where they fell */
+.fallen-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.corpse{position:absolute;overflow:visible;opacity:.92;filter:saturate(.55) brightness(.72);
+  --body:var(--roman);--shield:var(--roman);--trim:#e3c574;--helm:#a4834a;--plume:#1a1a1a;--hood:#6b4a2a;--horse:#5a3d24;--cloth:var(--roman)}
+.corpse.carthage{--body:#c9b48a;--shield:var(--enemy);--trim:#d1ae58;--helm:#8a8a80;--plume:var(--enemy);--hood:#2b2015;--horse:#8a6a45;--cloth:var(--enemy)}
+.corpse.mail{--body:#7d7b74}
+.corpse.linen{--body:#e2d6b8}
+.corpse.lacquer{--body:#2e2622;--helm:#2e2622}
+.corpse.robe{--body:#2b2522;--helm:#ece4d2}
+@media(prefers-reduced-motion:no-preference){.corpse{animation:corpse-fall .35s ease-out both}}
+@keyframes corpse-fall{from{opacity:0}to{opacity:.92}}
+
+/* Missile volleys: individual arrows and javelins arcing over the field */
+.projectile-layer{position:absolute;inset:0;z-index:9;pointer-events:none;overflow:hidden}
+.projectile-layer.paused .missile,.projectile-layer.paused .missile-body{animation-play-state:paused}
+.missile{position:absolute;width:0;height:0;--fletch:#e9d7a8}
+.missile.carthage{--fletch:#d1ae58}
+.missile.flying{animation-name:missile-travel;animation-timing-function:linear;animation-fill-mode:both}
+@keyframes missile-travel{from{transform:translate(0,0)}to{transform:translate(var(--dx),var(--dy))}}
+.missile-body{position:absolute;left:-7px;top:-1px;width:14px;height:1.6px;transform:rotate(var(--angle));
+  background:linear-gradient(90deg,var(--fletch) 0 22%,#7a5a36 22% 82%,#d9d6cc 82%);
+  animation-name:missile-arc;animation-fill-mode:both;box-shadow:0 0 1px #0008}
+.missile.javelin .missile-body{left:-10px;width:20px;height:1.8px;background:linear-gradient(90deg,#6b4a2a 0 80%,#cfccc2 80%)}
+.missile-body::after{content:"";position:absolute;right:-3px;top:-1.3px;border-left:4px solid #d9d6cc;border-top:2.1px solid transparent;border-bottom:2.1px solid transparent}
+@keyframes missile-arc{
+  0%{transform:translateY(0) rotate(var(--angle)) scale(1);animation-timing-function:ease-out}
+  50%{transform:translateY(var(--h)) rotate(var(--angle)) scale(1.4);animation-timing-function:ease-in}
+  100%{transform:translateY(0) rotate(var(--angle)) scale(1)}}
+.missile-shadow{position:absolute;left:-6px;top:0;width:12px;height:2px;border-radius:2px;background:#0d0a0759;transform:rotate(var(--angle));filter:blur(.6px)}
+.missile.stuck{animation:missile-fade 6s linear both}
+.missile.stuck i{position:absolute;left:-4px;top:-1px;width:8px;height:1.6px;transform:rotate(var(--angle));
+  background:linear-gradient(90deg,var(--fletch) 0 40%,#7a5a36 40%);box-shadow:1px 1.5px 0 #0d0a0740}
+@keyframes missile-fade{0%,75%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.projectile-layer{display:none}}
+.missile.stuck.javelin i{left:-6px;width:12px;background:linear-gradient(90deg,#6b4a2a 0 100%)}
