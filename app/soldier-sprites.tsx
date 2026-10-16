@@ -71,24 +71,119 @@ export function SoldierSpriteDefs(){
         <path d="M-5 2 L-6.5 -3 M5 2 L6.5 -3" stroke="#c8a07a" strokeWidth="1.2" strokeLinecap="round"/>
         <circle cx="0" cy="0.6" r="2.7" className="spr-helm"/>
       </symbol>
+      {/* Greece */}
+      <symbol id="spr-hoplite" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.4" rx="6.2" ry="3.5" className="spr-body"/>
+        <path d="M4.4 6 L4.4 -18.5" stroke="#6b4a2a" strokeWidth="1"/>
+        <path d="M3.6 -18 L4.4 -21.5 L5.2 -18 Z" fill="#d9d6cc"/>
+        <circle cx="-1.6" cy="-3.2" r="5.8" className="spr-shield"/>
+        <circle cx="-1.6" cy="-3.2" r="3.4" fill="none" className="spr-ring"/>
+        <circle cx="0" cy="1" r="2.6" className="spr-helm"/>
+        <path d="M0 -1.4 V3.4" className="spr-plume"/>
+      </symbol>
+      <symbol id="spr-pike" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.2" rx="6" ry="3.4" className="spr-body"/>
+        <path d="M3.2 9 L3.2 -21" stroke="#6b4a2a" strokeWidth=".9"/>
+        <path d="M2.5 -20.5 L3.2 -24 L3.9 -20.5 Z" fill="#d9d6cc"/>
+        <circle cx="-1.2" cy="-2.4" r="3.6" className="spr-shield"/>
+        <circle cx="0" cy="0.8" r="2.5" className="spr-helm"/>
+      </symbol>
+      <symbol id="spr-pelta" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.1" rx="5.4" ry="3" className="spr-body"/>
+        <path d="M3.4 3 L6 -12 M4.6 3.4 L7.4 -11" stroke="#6b4a2a" strokeWidth=".7"/>
+        <path d="M-8.6 -3 Q-4.6 -8 -0.6 -3 Q-4.6 -5.2 -8.6 -3 Z" className="spr-shield"/>
+        <circle cx="0" cy="0.6" r="2.5" className="spr-hood"/>
+      </symbol>
+      <symbol id="spr-companion" viewBox="-12 -24 24 36">
+        <g transform="translate(0 -4)">
+          <path d="M0 11.5 Q-1 14 0.4 15.6" className="spr-tail"/>
+          <ellipse cx="0" cy="3" rx="3.8" ry="8.6" className="spr-horse"/>
+          <ellipse cx="0" cy="-8" rx="2" ry="4.2" className="spr-horse"/>
+          <path d="M-4 2 L4 2 L5.6 9.5 L-5.6 9.5 Z" className="spr-cloth"/>
+          <ellipse cx="0" cy="1.6" rx="5" ry="2.8" className="spr-body"/>
+          <path d="M4.4 7 L4.4 -16.5" stroke="#6b4a2a" strokeWidth=".9"/>
+          <path d="M3.6 -16 L4.4 -19.5 L5.2 -16 Z" fill="#d9d6cc"/>
+          <circle cx="0" cy="1.2" r="2.4" className="spr-helm"/>
+        </g>
+      </symbol>
+      {/* Japan */}
+      <symbol id="spr-ashi-yari" viewBox="-12 -24 24 36">
+        <path d="M0 3 V9.6" stroke="#6b4a2a" strokeWidth=".5"/>
+        <rect x="-1.7" y="4.2" width="3.4" height="5.6" className="spr-flag"/>
+        <ellipse cx="0" cy="1.2" rx="6" ry="3.4" className="spr-body"/>
+        <path d="M4 5 L4 -19.5" stroke="#6b4a2a" strokeWidth="1"/>
+        <path d="M3.3 -19 L4 -23.5 L4.7 -19 Z" fill="#d9d6cc"/>
+        <circle cx="0" cy="0.6" r="4.1" className="spr-hat"/>
+        <circle cx="0" cy="0.6" r="1.1" className="spr-trim"/>
+      </symbol>
+      <symbol id="spr-yumi" viewBox="-12 -24 24 36">
+        <path d="M0 3 V9.6" stroke="#6b4a2a" strokeWidth=".5"/>
+        <rect x="-1.7" y="4.2" width="3.4" height="5.6" className="spr-flag"/>
+        <ellipse cx="0" cy="1.2" rx="5.6" ry="3.2" className="spr-body"/>
+        <path d="M-7.5 -4.6 Q0 -10 7.5 -4.6" fill="none" stroke="#6b4a2a" strokeWidth="1.1"/>
+        <path d="M-7.5 -4.6 L7.5 -4.6" stroke="#e9dfc4" strokeWidth=".35"/>
+        <circle cx="0" cy="0.6" r="4" className="spr-hat"/>
+        <circle cx="0" cy="0.6" r="1.1" className="spr-trim"/>
+      </symbol>
+      <symbol id="spr-samurai" viewBox="-12 -24 24 36">
+        <path d="M0 3 V9.6" stroke="#6b4a2a" strokeWidth=".5"/>
+        <rect x="-1.7" y="4.2" width="3.4" height="5.6" className="spr-flag"/>
+        <ellipse cx="0" cy="1.2" rx="6" ry="3.4" className="spr-body"/>
+        <rect x="-7.4" y="-0.8" width="3.4" height="3.8" rx=".6" className="spr-sode"/>
+        <rect x="4" y="-0.8" width="3.4" height="3.8" rx=".6" className="spr-sode"/>
+        <path d="M3.8 -1.2 Q5.4 -6 6 -11.5" fill="none" stroke="#d9d6cc" strokeWidth="1.1" strokeLinecap="round"/>
+        <circle cx="3.8" cy="-1.4" r=".8" fill="#2b1d0f"/>
+        <circle cx="0" cy="0.6" r="2.8" className="spr-helm"/>
+        <path d="M-2.6 -2.4 Q0 -0.2 2.6 -2.4" fill="none" className="spr-horns"/>
+      </symbol>
+      <symbol id="spr-monk" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.2" rx="6" ry="3.4" className="spr-body"/>
+        <path d="M4 6 L4 -15.5" stroke="#6b4a2a" strokeWidth=".9"/>
+        <path d="M4.4 -15.5 Q6.2 -19 4.6 -22.6 L3.4 -15.5 Z" fill="#d9d6cc"/>
+        <circle cx="0" cy="0.6" r="2.7" className="spr-hood"/>
+      </symbol>
+      <symbol id="spr-samurai-cav" viewBox="-12 -24 24 36">
+        <g transform="translate(0 -4)">
+          <path d="M0 11.5 Q-1 14 0.4 15.6" className="spr-tail"/>
+          <ellipse cx="0" cy="3" rx="3.8" ry="8.6" className="spr-horse"/>
+          <ellipse cx="0" cy="-8" rx="2" ry="4.2" className="spr-horse"/>
+          <path d="M0 3 V11" stroke="#6b4a2a" strokeWidth=".5"/>
+          <rect x="-1.7" y="5.6" width="3.4" height="5.6" className="spr-flag"/>
+          <ellipse cx="0" cy="1.6" rx="5" ry="2.8" className="spr-body"/>
+          <path d="M4.4 7 L4.4 -16.5" stroke="#6b4a2a" strokeWidth=".9"/>
+          <path d="M3.7 -16 L4.4 -20 L5.1 -16 Z" fill="#d9d6cc"/>
+          <circle cx="0" cy="1.2" r="2.4" className="spr-helm"/>
+          <path d="M-2.2 -0.8 Q0 1 2.2 -0.8" fill="none" className="spr-horns"/>
+        </g>
+      </symbol>
     </defs>
   </svg>;
 }
 
-// Units whose figures wear mail rather than a coloured tunic.
-const MAIL=new Set(["principes","triarii","equites","hypaspists","companions","katana-samurai","mounted-samurai"]);
+// Theater-specific looks by unit key: which top-down figure to draw and which
+// body finish (mail, linen cuirass, lacquered armour, monk's robe) to colour it with.
+// Unlisted units fall back to the Roman figure for their kind.
+const LOOK:Record<string,{sprite:string;finish:string}>={
+  principes:{sprite:"spr-inf",finish:"mail"},triarii:{sprite:"spr-spear",finish:"mail"},equites:{sprite:"spr-cav",finish:"mail"},
+  pezhetairoi:{sprite:"spr-pike",finish:"linen"},hypaspists:{sprite:"spr-hoplite",finish:"linen"},hoplites:{sprite:"spr-hoplite",finish:"linen"},
+  peltasts:{sprite:"spr-pelta",finish:""},companions:{sprite:"spr-companion",finish:"linen"},
+  "yari-ashigaru":{sprite:"spr-ashi-yari",finish:"lacquer"},"katana-samurai":{sprite:"spr-samurai",finish:"lacquer"},
+  "yumi-ashigaru":{sprite:"spr-yumi",finish:"lacquer"},"mounted-samurai":{sprite:"spr-samurai-cav",finish:"lacquer"},
+  "warrior-monks":{sprite:"spr-monk",finish:"robe"},
+};
 const FIGURE=18, HALF=FIGURE/2; // rendered figure width in px; height is 1.5×
 
 type Spot={x:number;y:number;a:number;sprite:string};
 
 function jitter(seed:number,i:number){const v=Math.sin(seed*91.7+i*12.9898)*43758.5453;return v-Math.floor(v)-.5}
 
-export function soldierLayout(u:Pick<BattleUnit,"id"|"kind"|"side"|"men"|"formation"|"width">,routing:boolean,fighting:boolean,frontage:number):Spot[]{
+export function soldierLayout(u:Pick<BattleUnit,"id"|"key"|"kind"|"side"|"men"|"formation"|"width">,routing:boolean,fighting:boolean,frontage:number):Spot[]{
   const cav=u.kind==="Cavalry";
   const count=Math.max(3,Math.min(cav?12:30,Math.round(u.men/(cav?4:5))));
-  const base=u.kind==="Infantry"?"spr-inf":u.kind==="Spears"?(u.side==="rome"?"spr-spear":"spr-spear-round"):u.kind==="Archers"?"spr-skirm":"spr-cav";
+  const roman=u.kind==="Infantry"?"spr-inf":u.kind==="Spears"?(u.side==="rome"?"spr-spear":"spr-spear-round"):u.kind==="Archers"?"spr-skirm":"spr-cav";
+  const base=LOOK[u.key]?.sprite??roman;
   const guard=u.formation==="Guard"&&!cav;
-  const sprite=routing?"spr-rout":guard&&u.kind==="Spears"?"spr-brace":base;
+  const sprite=routing?"spr-rout":guard&&(base==="spr-spear"||base==="spr-spear-round")?"spr-brace":base;
   const dx=cav?15:guard?9.5:u.kind==="Archers"?13:10.5, dy=cav?21:guard?11:u.kind==="Archers"?15:12.5;
   const loose=routing?3.4:u.kind==="Archers"?1.6:cav?.45:.5;
   const out:Spot[]=[];
@@ -99,7 +194,7 @@ export function soldierLayout(u:Pick<BattleUnit,"id"|"kind"|"side"|"men"|"format
     const files=Math.max(3,Math.min(count,Math.round(frontage*1.2/dx))),ranks=Math.ceil(count/files);
     for(let i=0;i<count;i++){
       const r=Math.floor(i/files),f=i%files,inRank=Math.min(files,count-r*files);
-      out.push({x:(f-(inRank-1)/2)*dx,y:(r-(ranks-1)/2)*dy,a:0,sprite:fighting&&r===0&&u.kind==="Infantry"&&!routing&&(f+r)%2===0?"spr-inf-strike":sprite});
+      out.push({x:(f-(inRank-1)/2)*dx,y:(r-(ranks-1)/2)*dy,a:0,sprite:fighting&&r===0&&base==="spr-inf"&&!routing&&(f+r)%2===0?"spr-inf-strike":sprite});
     }
   }
   return out.map((s,i)=>({...s,
@@ -122,7 +217,7 @@ function SoldierFormationView({unit:u,routing,fighting,frontage}:FormationProps)
   const pad=FIGURE*1.6;
   const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad*1.4,maxY=Math.max(...ys)+pad;
   const w=maxX-minX,h=maxY-minY;
-  return <svg className={`soldiers ${MAIL.has(u.key)?"mail":""} ${u.kind.toLowerCase()}`} width={w} height={h} viewBox={`${minX} ${minY} ${w} ${h}`}
+  return <svg className={`soldiers ${LOOK[u.key]?.finish??""} ${u.kind.toLowerCase()}`} width={w} height={h} viewBox={`${minX} ${minY} ${w} ${h}`}
     style={{transform:`translate(-50%,-50%) rotate(${u.facing+90}deg)`}} aria-hidden="true" focusable="false">
     {spots.map((s,i)=><use key={i} href={`#${s.sprite}`} x={s.x-HALF} y={s.y-FIGURE} width={FIGURE} height={FIGURE*1.5}
       transform={s.a?`rotate(${s.a.toFixed(1)} ${s.x.toFixed(1)} ${s.y.toFixed(1)})`:undefined}/>)}

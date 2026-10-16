@@ -597,3 +597,14 @@ select,input,textarea{border-radius:0}
 .campaign-shell .roster-unit{grid-template-columns:44px minmax(0,1fr) auto}
 .campaign-shell .recruit-list button{grid-template-columns:44px minmax(0,1fr) auto;gap:8px}
 .inspector-title .unit-portrait{width:46px;height:60px}
+/* Theater finishes for the soldier figures */
+.spr-flag{fill:var(--shield);stroke:var(--trim);stroke-width:.4}
+.spr-hat{fill:var(--hat);stroke:#0007;stroke-width:.4}
+.spr-sode{fill:var(--body);stroke:var(--shield);stroke-width:.5}
+.spr-horns{stroke:var(--trim);stroke-width:.9;stroke-linecap:round}
+.soldiers{--hat:#3a2e22}
+.soldiers.linen,.battle-token.carthage .soldiers.linen{--body:#e2d6b8}
+.soldiers.lacquer,.battle-token.carthage .soldiers.lacquer{--body:#2e2622;--helm:#2e2622}
+.soldiers.robe,.battle-token.carthage .soldiers.robe{--body:#2b2522;--hood:#ece4d2}
+.soldiers.archers.lacquer,.battle-token.carthage .soldiers.archers.lacquer{--body:#3a302a}
+.unit-portrait{--pt-linen:#e2d6b8;--pt-lacquer:#4a3d35;--pt-hat:#5a4632;--pt-robe:#3a3230}
