@@ -544,3 +544,37 @@ select,input,textarea{border-radius:0}
 .capture-point{color:#f6e2a6;border-color:#e3c574;background:#e3c57422}
 .weather-rain:after{background:repeating-linear-gradient(105deg,#0000 0 14px,#dce4db26 15px 16px),linear-gradient(#1a2a3022,#1a2a3022)}
 .battle-briefing small{color:#5c4628}
+
+/* Individual soldier figures replace the rank bars on battle tokens */
+.soldiers{position:absolute;left:50%;top:50%;z-index:0;pointer-events:none;overflow:visible;transform-origin:center;
+  --body:var(--roman);--shield:var(--roman);--trim:#e3c574;--helm:#a4834a;--plume:#1a1a1a;--hood:#6b4a2a;--horse:#5a3d24;--cloth:var(--roman);
+  filter:drop-shadow(0 1.5px 1px #0007)}
+.battle-token.carthage .soldiers{--body:#c9b48a;--shield:var(--enemy);--trim:#d1ae58;--helm:#8a8a80;--plume:var(--enemy);--hood:#2b2015;--horse:#8a6a45;--cloth:var(--enemy)}
+.soldiers.mail,.battle-token.carthage .soldiers.mail{--body:#7d7b74}
+.soldiers.archers{--body:color-mix(in srgb,var(--roman) 70%,#e9d7a8)}
+.battle-token.carthage .soldiers.archers{--body:#e2d6bc}
+.soldiers use{pointer-events:visiblePainted;cursor:pointer}
+.spr-body{fill:var(--body);stroke:#1a0b08;stroke-width:.6}
+.spr-shield{fill:var(--shield);stroke:var(--trim);stroke-width:.7}
+.spr-trim{fill:var(--trim)}
+.spr-ring{stroke:var(--trim);stroke-width:.5}
+.spr-helm{fill:var(--helm);stroke:#3a2a14;stroke-width:.5}
+.spr-plume{stroke:var(--plume);stroke-width:1.3;stroke-linecap:round;fill:none}
+.spr-hood{fill:var(--hood);stroke:#2b1d0f;stroke-width:.5}
+.spr-horse{fill:var(--horse);stroke:#1a0b08;stroke-width:.5}
+.spr-tail{stroke:var(--horse);stroke-width:1.6;fill:none;stroke-linecap:round}
+.spr-cloth{fill:var(--cloth)}
+.battle-token.selected .soldiers{filter:drop-shadow(0 0 1px #ffe18c) drop-shadow(0 0 1.5px #ffe18c) drop-shadow(0 1.5px 1px #0007)}
+.battle-token.inspected .soldiers{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1.5px #fff)}
+.battle-token.routing .soldiers{opacity:.85}
+/* The badge becomes a compact standard floating above the men */
+.battle-token .token-badge{height:20px;min-width:30px;padding:0 4px;margin:0 auto;width:max-content;transform:translateY(calc(var(--banner-y,-30px) + 4px));border-width:1px;border-color:var(--aurum);
+  border-radius:0;background:var(--roman);box-shadow:0 0 0 1px #0d0a07,0 2px 5px #000b}
+.battle-token.carthage .token-badge{border-radius:0;background:var(--enemy);border-color:#d1ae58}
+.battle-token .token-badge>span{font-size:13px}
+.battle-token .token-badge>b{font-size:12px}
+.battle-token .token-badge::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:8px;margin-left:-1px;background:#3a2a14}
+.battle-token .token-count{position:absolute;left:50%;top:auto;bottom:-14px;margin:0;transform:translateX(-50%);display:none}
+.battle-token.selected .token-count,.battle-token.inspected .token-count,.battle-token.routing .token-count{display:block}
+.battle-token .token-name{top:calc(var(--banner-y,-30px) - 12px)}
+.token-facing{opacity:.55;font-size:16px}

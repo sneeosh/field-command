@@ -5,19 +5,20 @@ import { moraleRule, unitDefinition, terrainRule } from '../lib/game-content';
 import { battlefieldFeatureAt } from '../lib/simulation-engine';
 import { formationRadius } from '../lib/tactics';
 import {moraleState} from '../lib/battle-rules';
+import { SoldierFormation, formationReach } from './soldier-sprites';
 
 export const kindIcon=(kind:BattleUnit['kind'])=>({Infantry:'⚔',Spears:'♜',Cavalry:'♞',Archers:'➶'})[kind];
 export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect',crowded=false,detailed=false}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore';crowded?:boolean;detailed?:boolean}){
   const routing=u.morale<moraleRule('rout_threshold');
   return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''} ${crowded?'crowded':''} ${detailed?'detailed':''}`}
-    style={{left:`${u.x}%`,top:`${u.y}%`}}
+    style={{left:`${u.x}%`,top:`${u.y}%`,['--banner-y' as string]:`${-Math.min(64,Math.round(formationReach(u,routing,formationRadius(u)*26))+6)}px`}}
     aria-label={`${u.side==='rome'?'Your':'Enemy'} ${u.name}, ${u.kind}, ${u.men} soldiers. ${u.side==='carthage'?(enemyAction==='attack'?'Attack with selected troops':enemyAction==='inspect'?'Inspect unit':'Attack unavailable'):'Select unit'}`}
     aria-pressed={u.side==='rome'?selected:inspected}
     title={`${u.name} · ${u.kind} · ${u.men}/${u.maxMen} soldiers · ${Math.round(u.morale)} morale · ${u.order}`}
     onPointerDown={e=>e.stopPropagation()} onClick={e=>onClick(e,u)}
     onPointerEnter={e=>{if(e.pointerType==='mouse')onInspect(u.id)}} onPointerLeave={e=>{if(e.pointerType==='mouse')onInspect(null)}}
     onFocus={()=>onInspect(u.id)} onBlur={()=>onInspect(null)}>
-    <span className="token-ranks" style={{width:`${formationRadius(u)*26}px`,transform:`translate(-50%,-50%) rotate(${u.facing+90}deg)`}} aria-hidden="true">{Array.from({length:Math.max(2,Math.ceil(u.men/u.maxMen*8))},(_,i)=><i key={i}/>)}</span>
+    <SoldierFormation unit={u} routing={routing} fighting={u.charging||u.attackTarget!==null} frontage={formationRadius(u)*26}/>
     <span className="token-facing" style={{transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} aria-hidden="true">➤</span>
     <span className="token-badge"><span aria-hidden="true">{kindIcon(u.kind)}</span><b>{number}</b></span>
     <span className="token-name">{u.name}</span><span className="token-count">{routing?'ROUT':`${u.men} men`}</span>
