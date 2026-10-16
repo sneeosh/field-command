@@ -578,3 +578,22 @@ select,input,textarea{border-radius:0}
 .battle-token.selected .token-count,.battle-token.inspected .token-count,.battle-token.routing .token-count{display:block}
 .battle-token .token-name{top:calc(var(--banner-y,-30px) - 12px)}
 .token-facing{opacity:.55;font-size:16px}
+
+/* Unit portraits: standing figures framed like Rome: Total War unit cards */
+.unit-portrait{position:relative;display:block;width:40px;height:52px;overflow:hidden;flex:none;
+  background:radial-gradient(ellipse at 50% 30%,#3a2d1a 0%,#1a140d 80%);border:1px solid var(--bronze-edge);
+  box-shadow:inset 0 0 0 1px #0d0a07,0 1px 3px #0006;
+  --pt-tunic:var(--roman);--pt-shield:var(--roman);--pt-trim:#e3c574;--pt-helm:#a4834a;--pt-crest:#1a1a1a;--pt-mail:#7d7b74;
+  --pt-light:color-mix(in srgb,var(--roman) 72%,#e9d7a8);--pt-hood:#6b4a2a;--pt-horse:#5a3d24}
+.unit-portrait.carthage{--pt-tunic:#c9b48a;--pt-shield:var(--enemy);--pt-trim:#d1ae58;--pt-helm:#8a8a80;--pt-crest:var(--enemy);--pt-mail:#8d8a80;
+  --pt-light:#e2d6bc;--pt-hood:#2b2015;--pt-horse:#8a6a45;background:radial-gradient(ellipse at 50% 30%,#1f3330 0%,#101a18 80%);border-color:#d1ae58}
+.unit-portrait svg{display:block;width:100%;height:100%}
+.unit-portrait::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 -14px 12px -8px #0d0a07cc}
+.unit-panel .unit-card{grid-template-columns:44px minmax(0,1fr) 34px;gap:6px}
+.unit-panel .unit-symbol{display:flex;flex-direction:column;align-items:center;gap:2px}
+.unit-panel .unit-symbol>small{margin-top:0;font-weight:600}
+.unit-card.selected .unit-symbol>small{color:var(--aurum-hi)}
+.unit-card.selected .unit-portrait{border-color:var(--aurum);box-shadow:0 0 0 1px var(--aurum),0 0 10px #e3c57466}
+.campaign-shell .roster-unit{grid-template-columns:44px minmax(0,1fr) auto}
+.campaign-shell .recruit-list button{grid-template-columns:44px minmax(0,1fr) auto;gap:8px}
+.inspector-title .unit-portrait{width:46px;height:60px}
