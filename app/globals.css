@@ -513,3 +513,34 @@ select,input,textarea{border-radius:0}
 .launch-actions{background:var(--stone);border-bottom:1px solid var(--bronze-edge);box-shadow:0 1px 0 var(--obsidian),0 2px 0 var(--bronze-deep)}
 .launch-actions span,.launch-actions p,.launch-actions label{color:#cdbb92}
 .battle-briefing small{font-family:var(--font-body),serif;font-weight:400;letter-spacing:normal;text-transform:none;font-size:15px}
+
+/* Battlefield terrain: a green, top-down field instead of the pale map table */
+.field{background-color:#535a36;background-image:
+  radial-gradient(ellipse 34% 30% at 22% 28%,#6c6d40 0%,#6c6d4000 100%),
+  radial-gradient(ellipse 36% 32% at 78% 68%,#6a6a3d 0%,#6a6a3d00 100%),
+  radial-gradient(ellipse 26% 22% at 62% 16%,#47502f 0%,#47502f00 100%),
+  radial-gradient(ellipse 30% 26% at 30% 82%,#4a5230 0%,#4a523000 100%),
+  repeating-linear-gradient(97deg,#0000 0 9px,#3f472814 9px 10px),
+  repeating-linear-gradient(7deg,#0000 0 13px,#7a7d4a12 13px 14px)}
+.field:after{box-shadow:inset 0 0 110px #0d0a0799}
+.field .farm-lines{background:repeating-linear-gradient(90deg,#7d7c4a55 0 3px,#0000 3px 14px);border-color:#3f472866}
+.scrub{color:#2f3a22d9;text-shadow:10px 5px #3c482b,20px -3px #46552f}
+.field .road{background:#8b7552b3;border-top:1px solid #5c4a2e;border-bottom:1px solid #5c4a2e;box-shadow:inset 0 0 0 3px #a08a6033}
+.road span,.terrain-ridge span,.forest-patch small{color:#e9d7a8b3}
+.terrain-ridge{background:radial-gradient(ellipse at center,#8a8a50cc 0 32%,#6f7043aa 62%,#6f704300 72%);border-color:#a4a26466;
+  box-shadow:inset 0 8px 16px #c9c58a33,0 10px 18px #1d1a0f55}
+.terrain-ridge:before,.terrain-ridge:after{border-color:#b3ae7466}
+.terrain-river .river{background:linear-gradient(90deg,#2b4a50,#4d7a80 30% 70%,#2b4a50);border-left:2px solid #6f8a6a88;border-right:2px solid #6f8a6a88;
+  box-shadow:inset 8px 0 14px #14262b99,inset -8px 0 14px #14262b99,0 0 0 6px #33553c33}
+.river>span{color:#d5e1d2cc}
+.bridge{background:repeating-linear-gradient(0deg,#5c4628 0 3px,#8b7552 3px 7px);border-color:#3a2c18}
+.terrain-forest .forest-patch{background:radial-gradient(ellipse at center,#2a3a1fdd 0 55%,#2f3a2299 72%,#2f3a2200 100%);color:#1c2814;text-shadow:2px 3px #3c482b}
+.deployment,.field .deployment{color:#e9d7a8b3;border-bottom-color:#e9d7a855}
+.terrain-title{color:#e9d7a899}
+.north,.scale{color:#e9d7a8cc;border-top-color:#e9d7a8cc}
+.field.deploy:before,.field.deploy.siege:before{border:2px dashed #e3c574aa;background:#e3c57412;color:#f6e2a6;
+  font-family:var(--font-display),serif;font-weight:700;letter-spacing:.3em}
+.field .city-wall,.field .city-wall.friendly-wall{color:#e9d7a8;border-left-color:#2b2015}
+.capture-point{color:#f6e2a6;border-color:#e3c574;background:#e3c57422}
+.weather-rain:after{background:repeating-linear-gradient(105deg,#0000 0 14px,#dce4db26 15px 16px),linear-gradient(#1a2a3022,#1a2a3022)}
+.battle-briefing small{color:#5c4628}
