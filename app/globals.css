@@ -644,3 +644,92 @@ select,input,textarea{border-radius:0}
 @keyframes missile-fade{0%,75%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.projectile-layer{display:none}}
 .missile.stuck.javelin i{left:-6px;width:12px;background:linear-gradient(90deg,#6b4a2a 0 100%)}
+
+/* Siege works: stone walls, towers, gatehouse and the town behind them */
+.siege-works{position:absolute;inset:0;z-index:2;pointer-events:none;--stone:#9a8f78;--stone-dark:#6f6553;--stone-hi:#bdb29a;--roof:#a8553a;--roof-dark:#7a3a26;--roof-ridge:#c9765a;--ground:#8a7d63}
+.siege-works.japan{--stone:#8d8a80;--stone-dark:#5f5c55;--stone-hi:#b5b2a8;--roof:#4a4d52;--roof-dark:#2e3034;--roof-ridge:#7a7e86;--ground:#857a63}
+.town-ground{position:absolute;top:0;bottom:0;background:radial-gradient(ellipse at 50% 50%,#8a7d6355 0%,#8a7d6333 70%,#8a7d6311 100%),repeating-linear-gradient(45deg,#0000 0 6px,#5c4a2e14 6px 7px)}
+.town-road{position:absolute;top:46%;height:8%;background:#a08a60aa;border-top:1px solid #5c4a2e66;border-bottom:1px solid #5c4a2e66}
+.house{position:absolute;border-radius:1px;background:linear-gradient(180deg,var(--roof-ridge) 0 8%,var(--roof) 8% 48%,var(--roof-dark) 52% 100%);
+  box-shadow:1px 2px 0 #0d0a0755,inset 0 0 0 1px #0d0a0733;opacity:.92}
+.house::after{content:"";position:absolute;left:0;right:0;top:48%;height:1px;background:var(--roof-ridge)}
+.siege-works.japan .house{background:linear-gradient(180deg,var(--roof-ridge) 0 6%,var(--roof) 6% 47%,var(--roof-dark) 53% 100%);border-radius:0 0 2px 2px}
+.forum{position:absolute;top:50%;width:17%;aspect-ratio:1/1;max-height:30%;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#c9bb98 0 40%,#b3a581 41% 62%,#9c8e6a 63% 70%,#9c8e6a00 71%);
+  box-shadow:inset 0 0 0 2px #e3c57444}
+.forum::before{content:"";position:absolute;inset:18%;border-radius:50%;background:repeating-conic-gradient(#0000 0 15deg,#6f655314 15deg 30deg)}
+.forum i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:#e3c574;box-shadow:0 0 0 3px #6f6553}
+.wall-run{position:absolute;width:18px;margin-left:-9px;background:
+  repeating-linear-gradient(0deg,var(--stone-dark) 0 1px,#0000 1px 7px),
+  repeating-linear-gradient(90deg,var(--stone) 0 6px,var(--stone-hi) 6px 7px,var(--stone) 7px 14px);
+  box-shadow:inset 0 0 0 1px #2b2015,4px 0 0 -1px #0d0a0733,-3px 0 0 #2b201566}
+.wall-run::before{content:"";position:absolute;top:0;bottom:0;width:4px;background:repeating-linear-gradient(0deg,var(--stone-hi) 0 5px,#0000 5px 9px)}
+.town-right .wall-run::before{left:-4px}.town-left .wall-run::before{right:-4px}
+.wall-tower{position:absolute;width:26px;height:26px;transform:translate(-50%,-50%);border:1px solid #2b2015;
+  background:radial-gradient(circle at 50% 50%,var(--stone-hi) 0 22%,var(--stone) 23% 60%,var(--stone-dark) 100%);
+  box-shadow:inset 0 0 0 3px var(--stone),inset 0 0 0 4px #2b201555,3px 4px 0 #0d0a0755}
+.wall-tower::before{content:"";position:absolute;inset:-4px;background:
+  linear-gradient(90deg,var(--stone-dark) 0 6px,#0000 6px 12px,var(--stone-dark) 12px 18px,#0000 18px 24px,var(--stone-dark) 24px) top/100% 4px no-repeat,
+  linear-gradient(90deg,var(--stone-dark) 0 6px,#0000 6px 12px,var(--stone-dark) 12px 18px,#0000 18px 24px,var(--stone-dark) 24px) bottom/100% 4px no-repeat}
+.siege-works.japan .wall-tower{border-radius:2px;background:linear-gradient(135deg,var(--roof-ridge),var(--roof) 50%,var(--roof-dark));box-shadow:inset 0 0 0 2px var(--roof-dark),3px 4px 0 #0d0a0755}
+.gatehouse{position:absolute;top:43%;height:14%;width:24px;margin-left:-12px}
+.gate-tower{position:absolute;left:50%;width:30px;height:30px;transform:translateX(-50%);border:1px solid #2b2015;
+  background:radial-gradient(circle,var(--stone-hi) 0 20%,var(--stone) 21% 62%,var(--stone-dark));box-shadow:3px 4px 0 #0d0a0755}
+.gate-tower.north{top:-18px}.gate-tower.south{bottom:-18px}
+.siege-works.japan .gate-tower{background:linear-gradient(135deg,var(--roof-ridge),var(--roof) 50%,var(--roof-dark))}
+.gate-door{position:absolute;left:3px;right:3px;height:calc(50% - 10px);background:repeating-linear-gradient(90deg,#6b4a2a 0 3px,#4a3016 3px 4px);
+  border:1px solid #2b1d0f;box-shadow:inset 0 0 0 1px #a4834a55;transition:transform .5s,opacity .5s}
+.gate-door.top{top:12px}.gate-door.bottom{bottom:12px}
+.gatehouse.battered .gate-door{box-shadow:inset 0 0 0 1px #a4834a55,inset 0 0 6px #0d0a07aa}
+.gatehouse.failing .gate-door.top{transform:rotate(-7deg)}.gatehouse.failing .gate-door.bottom{transform:rotate(9deg)}
+.gatehouse.breached .gate-door.top{transform:translate(9px,-4px) rotate(-62deg);opacity:.85}
+.gatehouse.breached .gate-door.bottom{transform:translate(-8px,5px) rotate(71deg);opacity:.85}
+.rubble{position:absolute;left:-6px;right:-6px;top:30%;bottom:30%;background:radial-gradient(circle at 20% 40%,var(--stone) 0 2px,#0000 3px),radial-gradient(circle at 70% 60%,var(--stone-dark) 0 2.5px,#0000 3.5px),radial-gradient(circle at 45% 25%,var(--stone-hi) 0 1.5px,#0000 2.5px),radial-gradient(circle at 85% 30%,var(--stone) 0 2px,#0000 3px)}
+/* Gate and capture labels become compact plaques over the drawn works */
+.field .siege-gate{background:#1a140de6;border:1px solid var(--bronze-edge);min-width:0;height:auto;padding:2px 6px;top:calc(43% - 52px);transform:translateX(-50%);color:var(--vellum);flex-direction:row;gap:5px;font:12px var(--font-body)}
+.field .siege-gate strong{font-family:var(--font-display),serif;font-size:10px;letter-spacing:.12em}
+.field .siege-gate span{padding:0}
+.field .siege-gate.breached{background:#8a1d15e6;border-style:solid;border-color:var(--aurum)}
+.field .capture-point{width:auto;height:auto;border:0;background:none;top:calc(50% + 34px);color:var(--aurum-hi);font-size:14px;text-shadow:0 1px 2px #000}
+.field .capture-point span{font-family:var(--font-display),serif;font-size:10px;letter-spacing:.18em}
+
+/* Campaign map: miniature settlements and army standards */
+.settlement-pin,.campaign-shell .settlement-pin{width:46px;height:42px;padding:0;border:0;background:none;border-radius:0;outline:0;box-shadow:none;
+  transform:translate(-50%,-62%);--owner:var(--roman);filter:drop-shadow(0 3px 3px #0d0a07aa)}
+.settlement-pin.carthage{--owner:var(--enemy);background:none}
+.settlement-pin>*{transform:none}
+.settlement-pin.selected{outline:0;filter:drop-shadow(0 0 3px #f6e2a6) drop-shadow(0 0 2px #f6e2a6) drop-shadow(0 3px 3px #0d0a07aa)}
+.settlement-pin:hover{filter:drop-shadow(0 0 2px #f6e2a6) drop-shadow(0 3px 3px #0d0a07aa)}
+.settlement-mini{display:block;width:100%;height:100%;overflow:visible}
+.mini-ground{fill:#b9a77f;stroke:#6b5330;stroke-width:.8}
+.mini-wall{fill:none;stroke:#8a8070;stroke-width:3;stroke-dasharray:4 1.4}
+.mini-house{fill:#a8553a;stroke:#3a1a10;stroke-width:.5}
+.mini-ridge{stroke:#d08060;stroke-width:.7}
+.settlement-mini.japan .mini-house{fill:#4a4d52;stroke:#1a1c1f}
+.settlement-mini.japan .mini-ridge{stroke:#8a8e96}
+.settlement-mini.japan .mini-ground{fill:#a99a78}
+.mini-temple rect{fill:#e6dcc0;stroke:#6b5330;stroke-width:.6}
+.mini-columns{stroke:#b8aa86;stroke-width:1}
+.mini-roof{fill:#a8553a;stroke:#3a1a10;stroke-width:.5}
+.settlement-mini.japan .mini-roof{fill:#3a3d42;stroke:#16181a}
+.mini-keep rect{fill:#ece4d2;stroke:#3a3d42;stroke-width:.6}
+.mini-pole{stroke:#3a2a14;stroke-width:1.2}
+.mini-pennant{fill:var(--owner);stroke:#e3c574;stroke-width:.6}
+.mini-star{fill:#e3c574;stroke:#6b4a14;stroke-width:.7}
+.settlement-mini.city{transform:scale(1.12)}
+.settlement-mini.village{transform:scale(.86)}
+
+.map-army,.campaign-shell .map-army{width:28px;height:44px;border:0;background:none;box-shadow:none;outline:0;transform:translate(-50%,-80%);overflow:visible;
+  --owner:var(--roman);--edge:#e3c574;filter:drop-shadow(0 3px 3px #0d0a07bb)}
+.map-army.carthage{--owner:var(--enemy);--edge:#d1ae58;background:none}
+.army-standard{position:absolute;inset:0;display:block}
+.standard-pole{position:absolute;left:50%;top:2px;bottom:4px;width:2px;margin-left:-1px;background:#3a2a14}
+.standard-pole::before{content:"";position:absolute;left:-4px;top:-3px;width:10px;height:4px;background:var(--edge);border-radius:2px 2px 0 0}
+.standard-banner{position:absolute;left:50%;top:5px;width:24px;height:22px;transform:translateX(-50%);background:var(--owner);
+  border:1px solid var(--edge);clip-path:polygon(0 0,100% 0,100% 78%,83% 100%,66% 78%,50% 100%,33% 78%,17% 100%,0 78%);display:grid;place-items:center}
+.standard-banner b{font:700 12px var(--font-display),serif;color:var(--edge);line-height:1;margin-top:-3px}
+.map-army .army-standard small,.campaign-shell .map-army small{position:absolute;left:50%;bottom:-6px;right:auto;transform:translateX(-50%);min-width:16px;padding:0 3px;
+  background:#1a140d;border:1px solid var(--edge);border-radius:0;color:#f6e2a6;font:700 10px/1.3 var(--font-body);text-align:center}
+.map-army .army-standard em{position:absolute;left:24px;top:8px;color:#f6e2a6;font-style:normal;font-size:14px;text-shadow:0 1px 2px #000}
+.map-army.selected{outline:0;filter:drop-shadow(0 0 2px #fff0b0) drop-shadow(0 0 3px #fff0b0) drop-shadow(0 3px 3px #0d0a07bb)}
+.map-army.selected::after{content:"";position:absolute;left:50%;bottom:-10px;width:30px;height:9px;margin-left:-15px;border:2px solid #f6e2a6;border-radius:50%}

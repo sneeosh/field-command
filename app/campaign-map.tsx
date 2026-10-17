@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { theaterDefinition, factionDefinition, theaterRoutes } from "../lib/game-content";
 import { clampPan, layoutMap, type Point } from "../lib/map-layout";
 import type { Campaign } from "../lib/game-types";
+import { SettlementMiniature, ArmyStandard } from "./map-markers";
 
 export function CampaignMap({campaign:c,expanded,onExpand,onCity,onArmy}:{campaign:Campaign;expanded:boolean;onExpand:()=>void;onCity:(id:number)=>void;onArmy:(id:number)=>void}){
   const theater=theaterDefinition(c.theater),player=factionDefinition(theater.playerFaction),enemy=factionDefinition(theater.enemyFaction);
@@ -27,11 +28,11 @@ export function CampaignMap({campaign:c,expanded,onExpand,onCity,onArmy}:{campai
       <div className="map-projection" style={{width,height,left:`calc(50% + ${bounded.x}px)`,top:`calc(50% + ${bounded.y}px)`}}>
         <img src={theater.map} alt={`${theater.name} geography`} draggable={false}/>
         <svg className="strategic-routes" width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">{theaterRoutes(c.theater).map(r=>{const a=layout.anchors.find(x=>x.id===r.from),b=layout.anchors.find(x=>x.id===r.to);return a&&b?<line key={`${r.from}-${r.to}`} className={`route-${r.type}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y}/>:null})}{c.armies.map(a=>{const city=layout.anchors.find(x=>x.id===a.cityId),token=layout.tokens.get(a.id);return city&&token?<line key={`leader-${a.id}`} className="army-leader" x1={city.x} y1={city.y} x2={token.x} y2={token.y}/>:null})}</svg>
-        {layout.anchors.map(city=>{const label=layout.labels.get(city.id)!;const owner=c.cities.find(x=>x.id===city.id)!.owner;return <div key={city.id}>
-          <button className={`settlement-pin ${owner} ${city.id===c.selectedCity?"selected":""}`} aria-label={`Select ${city.name}`} aria-pressed={city.id===c.selectedCity} style={{left:city.x,top:city.y}} onClick={()=>onCity(city.id)}>{city.id===theater.objectiveCity?"★":"●"}</button>
+        {layout.anchors.map(city=>{const label=layout.labels.get(city.id)!;const data=c.cities.find(x=>x.id===city.id)!,owner=data.owner;return <div key={city.id}>
+          <button className={`settlement-pin ${owner} ${city.id===c.selectedCity?"selected":""}`} aria-label={`Select ${city.name}`} aria-pressed={city.id===c.selectedCity} style={{left:city.x,top:city.y}} onClick={()=>onCity(city.id)}><SettlementMiniature population={data.population} walls={data.buildings.includes("Walls")} capital={city.id===theater.capitalCity} objective={city.id===theater.objectiveCity} japan={c.theater==="japan"}/></button>
           <button className={`settlement-label ${city.id===c.selectedCity?"selected":""}`} style={{left:label.x,top:label.y}} onClick={()=>onCity(city.id)}>{city.name}</button>
         </div>})}
-        {c.armies.map(a=>{const pos=layout.tokens.get(a.id);return pos?<button key={a.id} className={`map-army ${a.side} ${a.id===c.selectedArmy?"selected":""}`} title={`${a.name} · ${a.units.length} cohorts`} aria-label={`Select ${a.name}, ${a.units.length} cohorts`} style={{left:pos.x,top:pos.y} as CSSProperties} onClick={()=>onArmy(a.id)}><b>{a.side==="rome"?"⚑":"♜"}</b><small>{a.units.length}</small>{a.targetCityId&&<em>→</em>}</button>:null})}
+        {c.armies.map(a=>{const pos=layout.tokens.get(a.id);return pos?<button key={a.id} className={`map-army ${a.side} ${a.id===c.selectedArmy?"selected":""}`} title={`${a.name} · ${a.units.length} cohorts`} aria-label={`Select ${a.name}, ${a.units.length} cohorts`} style={{left:pos.x,top:pos.y} as CSSProperties} onClick={()=>onArmy(a.id)}><ArmyStandard emblem={(a.side==="rome"?player:enemy).icon} count={a.units.length} moving={!!a.targetCityId}/></button>:null})}
       </div>
     </div>
     <nav className="settlement-index" aria-label="Find a settlement">{c.cities.map(city=><button className={city.id===c.selectedCity?"active":""} key={city.id} onClick={()=>{onCity(city.id);focus(city.id)}}><i style={{background:city.owner==="rome"?player.color:enemy.color}}/>{city.name}{city.id===theater.objectiveCity&&" ★"}</button>)}</nav>
