@@ -768,3 +768,61 @@ select,input,textarea{border-radius:0}
 @keyframes clash-sparks{0%{transform:rotate(0) scale(.9);opacity:1}100%{transform:rotate(40deg) scale(1.1);opacity:.75}}
 @keyframes clash-glint{0%{transform:scale(.3);border-color:#fff3c4cc}100%{transform:scale(1.1);border-color:#fff3c400}}
 .clash-flash.charge b{width:38px;height:38px}
+
+/* After-action report: an unrolled scroll on a darkened field */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.post-battle{background:radial-gradient(ellipse 60% 45% at 30% 30%,#3c3d2455,#3c3d2400),radial-gradient(ellipse 55% 40% at 75% 70%,#3a3a2266,#3a3a2200),
+  radial-gradient(ellipse at 50% 45%,#2b2e1c 0%,#14120c 70%,#0d0a07 100%)}
+.post-battle>section.report-scroll{position:relative;width:min(840px,100%);padding:40px clamp(18px,5vw,58px) 42px;display:flex;flex-direction:column;gap:22px;
+  background:var(--parchment-bg),var(--parchment);color:var(--ink-dark);border:0;border-left:1px solid var(--parchment-edge);border-right:1px solid var(--parchment-edge);
+  box-shadow:0 30px 70px #000d}
+.scroll-rod{position:absolute;left:-18px;right:-18px;height:22px;border-radius:11px;background:linear-gradient(180deg,#c0a46e,#a88d5c 45%,#7a6440);
+  border:1px solid #4a3a22;box-shadow:0 5px 12px #000a}
+.scroll-rod.top{top:-11px}.scroll-rod.bottom{bottom:-11px}
+.scroll-rod::before,.scroll-rod::after{content:"";position:absolute;top:-4px;width:14px;height:28px;border-radius:5px;background:#4a3a22;box-shadow:inset 0 0 0 2px #6b5330}
+.scroll-rod::before{left:-8px}.scroll-rod::after{right:-8px}
+.post-battle .report-scroll header{border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+.report-laurel{width:220px;height:44px;fill:#8a6b3a}
+.report-laurel .laurel-gem{fill:var(--roman)}
+.report-laurel.fallen-standard{fill:none}
+.broken-pole{stroke:#4a3a22;stroke-width:3;stroke-linecap:round}
+.torn-flag{fill:var(--roman);opacity:.8}
+.post-battle .report-scroll header small{font-family:var(--font-display),serif;font-weight:700;font-size:12px;letter-spacing:.3em;color:#7a6038}
+.post-battle .report-scroll header strong{margin:0;font-family:var(--font-display),serif;font-weight:800;font-size:clamp(30px,6vw,54px);letter-spacing:.1em;color:var(--roman);text-align:center}
+.post-battle.defeat .report-scroll header strong,.post-battle.withdrawal .report-scroll header strong{color:#3a2c1c}
+.post-battle .report-scroll header p{font-size:19px;font-style:italic;color:#4e3d26;text-align:center;max-width:560px}
+.post-battle .report-objective{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;background:none;border:0;padding:0;margin:0}
+.post-battle .report-objective span{font-family:var(--font-display),serif;font-size:11px;font-weight:700;letter-spacing:.24em;color:#7a6038}
+.post-battle .report-objective b{font-size:18px;color:var(--ink-dark)}
+.post-battle .report-objective em{font-style:normal;font-family:var(--font-display),serif;font-weight:700;font-size:11px;letter-spacing:.16em;padding:4px 10px;
+  background:var(--seal);color:#fbe9b8;box-shadow:inset 0 0 0 2px var(--seal),inset 0 0 0 3px var(--seal-ring)}
+.post-battle.defeat .report-objective em{background:#3a2c1c;box-shadow:inset 0 0 0 2px #3a2c1c,inset 0 0 0 3px #8a6b3a}
+.report-casualties{width:100%;border-collapse:collapse;font-size:18px}
+.report-casualties th,.report-casualties td{padding:9px 8px;text-align:right;border-top:1px solid #c4ae7c}
+.report-casualties thead th{border:0;padding-bottom:6px;font-family:var(--font-display),serif;font-size:11px;font-weight:700;letter-spacing:.18em;color:#7a6038;text-transform:uppercase}
+.report-casualties tbody th{text-align:left;font-family:var(--font-display),serif;font-size:15px;font-weight:700;letter-spacing:.06em;white-space:nowrap}
+.report-casualties td.fallen{color:#7f241e;font-weight:600}
+.report-casualties .strength{width:30%}
+.report-casualties .strength i{display:block;height:8px;background:#c8b68a;border:1px solid #8a6b3a}
+.report-casualties .strength b{display:block;height:100%;background:var(--roman)}
+.report-casualties tr.enemy .strength b,.report-casualties tr.enemy .report-pennant{background:var(--enemy)}
+.report-pennant{display:inline-block;width:12px;height:16px;margin-right:9px;vertical-align:-2px;background:var(--roman);clip-path:polygon(0 0,100% 0,100% 72%,50% 100%,0 72%)}
+.report-columns{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px 30px}
+.post-battle .report-analysis,.post-battle .report-honors{background:none;border:0;padding:0;margin:0}
+.post-battle .report-analysis h2,.post-battle .report-honors h2{margin:0 0 8px;font-family:var(--font-display),serif;font-size:13px;font-weight:700;letter-spacing:.2em;color:#7a6038;text-transform:uppercase}
+.report-analysis ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:17px;line-height:1.4}
+.report-honors div{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;background:#7f241e12;border:1px solid #b59b66}
+.report-honors svg{flex:none;width:28px;height:28px;fill:none;stroke:var(--roman);stroke-width:1.6}
+.post-battle .report-honors p{margin:0;font-size:17px;line-height:1.4;color:var(--ink-dark)}
+.post-battle .report-scroll>button{align-self:center;margin:4px auto 0;padding:14px 28px}
+@media(max-width:700px){.report-casualties .strength{display:none}.report-casualties{font-size:16px}.scroll-rod{left:-8px;right:-8px}}
+.post-battle .report-honors{display:block}
+.post-battle .report-analysis li,.post-battle .report-analysis p{color:var(--ink-dark);opacity:1}
+.report-casualties thead th:first-child{text-align:left}
+@media(max-width:700px){
+  .report-casualties th,.report-casualties td{padding:7px 3px}
+  .report-casualties thead th{font-size:9px;letter-spacing:.06em}
+  .report-casualties tbody th{font-size:13px;white-space:normal}
+  .report-pennant{margin-right:5px}
+  .post-battle>section.report-scroll{padding:34px 14px 38px}
+}

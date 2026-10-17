@@ -187,8 +187,39 @@ function MarkdownTableEditor({value,onChange}:{value:string;onChange:(value:stri
 }
 
 function PostBattleReport({report,onContinue}:{report:BattleReport;onContinue:()=>void}){
-  const playerLoss=Math.max(0,report.playerBefore-report.playerAfter),enemyLoss=Math.max(0,report.enemyBefore-report.enemyAfter),title=report.outcome==="VICTORY"?"FIELD TRIUMPH":report.outcome==="WITHDRAWAL"?"ORDERED WITHDRAWAL":"ARMY DEFEATED";
-  return <main className={`post-battle ${report.outcome.toLowerCase()}`}><section><header><small>AFTER-ACTION REPORT · {report.city.toUpperCase()}</small><strong>{title}</strong><p>{report.message}</p></header><div className="report-objective"><span>OBJECTIVE</span><b>{report.objective}</b><em>{report.outcome==="VICTORY"?"BATTLE WON":report.outcome==="WITHDRAWAL"?"WITHDRAWN":"DEFEAT"}</em></div><div className="casualty-columns"><article><small>YOUR ARMY</small><strong>{report.playerAfter}</strong><span>soldiers remaining</span><i><b style={{width:`${report.playerAfter/Math.max(1,report.playerBefore)*100}%`}}/></i><p>−{playerLoss} casualties</p></article><div className="report-swords">⚔</div><article><small>ENEMY ARMY</small><strong>{report.enemyAfter}</strong><span>soldiers remaining</span><i><b style={{width:`${report.enemyAfter/Math.max(1,report.enemyBefore)*100}%`}}/></i><p>−{enemyLoss} casualties</p></article></div><div className="report-honors"><span>✦</span><p>{report.honors}</p></div>{report.analysis&&<section className="report-analysis"><h2>What decided the battle</h2>{report.analysis.map((line,i)=><p key={i}>{line}</p>)}</section>}<button onClick={onContinue}>{report.city==="Battle Lab"?"RETURN TO BATTLE LAB":"RETURN TO CAMPAIGN"} →</button></section></main>
+  const playerLoss=Math.max(0,report.playerBefore-report.playerAfter),enemyLoss=Math.max(0,report.enemyBefore-report.enemyAfter);
+  const kept=report.playerAfter/Math.max(1,report.playerBefore);
+  // The title reflects the margin, not just the outcome.
+  const title=report.outcome==="VICTORY"?(enemyLoss>=playerLoss*2.5&&kept>.6?"HEROIC VICTORY":playerLoss>enemyLoss*.8?"PYRRHIC VICTORY":"CLEAR VICTORY")
+    :report.outcome==="WITHDRAWAL"?"ORDERED WITHDRAWAL":kept<.25?"CRUSHING DEFEAT":"DEFEAT";
+  const rows=[{label:"Your army",cls:"player",before:report.playerBefore,after:report.playerAfter,lost:playerLoss},{label:"Enemy army",cls:"enemy",before:report.enemyBefore,after:report.enemyAfter,lost:enemyLoss}];
+  return <main className={`post-battle ${report.outcome.toLowerCase()}`}><section className="report-scroll">
+    <span className="scroll-rod top" aria-hidden="true"/>
+    <header>
+      {report.outcome==="VICTORY"?<svg className="report-laurel" viewBox="0 0 220 44" aria-hidden="true">
+        {[[70,22,-10],[54,18,-20],[38,15,-25],[22,14,-30],[62,30,15],[46,30,20]].map(([x,y,r],i)=><g key={i}><ellipse cx={x} cy={y} rx="9" ry="3.4" transform={`rotate(${r} ${x} ${y})`}/><ellipse cx={220-x} cy={y} rx="9" ry="3.4" transform={`rotate(${-r} ${220-x} ${y})`}/></g>)}
+        <path d="M104 22 l6 -8 6 8 -6 8 z" className="laurel-gem"/>
+      </svg>:<svg className="report-laurel fallen-standard" viewBox="0 0 220 44" aria-hidden="true"><path d="M86 40 L112 8 M116 6 L134 40" className="broken-pole"/><path d="M112 8 L94 12 L98 22 L114 18 Z" className="torn-flag"/></svg>}
+      <small>AFTER-ACTION REPORT · {report.city.toUpperCase()}</small>
+      <strong>{title}</strong>
+      <p>{report.message}</p>
+    </header>
+    <div className="report-objective"><span>OBJECTIVE</span><b>{report.objective}</b><em>{report.outcome==="VICTORY"?"BATTLE WON":report.outcome==="WITHDRAWAL"?"WITHDRAWN":"DEFEAT"}</em></div>
+    <table className="report-casualties">
+      <thead><tr><th scope="col">Force</th><th scope="col">Fielded</th><th scope="col">Remaining</th><th scope="col">Fallen</th><th scope="col"><span className="sr-only">Strength</span></th></tr></thead>
+      <tbody>{rows.map(r=><tr key={r.cls} className={r.cls}>
+        <th scope="row"><i className="report-pennant" aria-hidden="true"/>{r.label}</th>
+        <td>{r.before}</td><td>{r.after}</td><td className="fallen">−{r.lost}</td>
+        <td className="strength"><i><b style={{width:`${r.after/Math.max(1,r.before)*100}%`}}/></i></td>
+      </tr>)}</tbody>
+    </table>
+    <div className="report-columns">
+      {report.analysis&&<section className="report-analysis"><h2>What decided the battle</h2><ol>{report.analysis.map((line,i)=><li key={i}>{line}</li>)}</ol></section>}
+      <section className="report-honors"><h2>Honours</h2><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.4 6.8 19.2l1-5.9L3.5 9.2l5.9-.8z"/></svg><p>{report.honors}</p></div></section>
+    </div>
+    <button onClick={onContinue}>{report.city==="Battle Lab"?"RETURN TO BATTLE LAB":"RETURN TO CAMPAIGN"} →</button>
+    <span className="scroll-rod bottom" aria-hidden="true"/>
+  </section></main>
 }
 
 function TheaterSelect({markdown,onApply,onRestore,onStart}:{markdown:MarkdownContent;onApply:(content:MarkdownContent)=>string|null;onRestore:()=>void;onStart:(key:string)=>void}){
