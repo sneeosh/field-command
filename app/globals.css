@@ -733,3 +733,38 @@ select,input,textarea{border-radius:0}
 .map-army .army-standard em{position:absolute;left:24px;top:8px;color:#f6e2a6;font-style:normal;font-size:14px;text-shadow:0 1px 2px #000}
 .map-army.selected{outline:0;filter:drop-shadow(0 0 2px #fff0b0) drop-shadow(0 0 3px #fff0b0) drop-shadow(0 3px 3px #0d0a07bb)}
 .map-army.selected::after{content:"";position:absolute;left:50%;bottom:-10px;width:30px;height:9px;margin-left:-15px;border:2px solid #f6e2a6;border-radius:50%}
+
+/* Battle motion: marching steps, dust trails and melee clashes */
+@media(prefers-reduced-motion:no-preference){
+  .battle-token.moving .soldiers use{animation:march-step .42s ease-in-out infinite alternate}
+  .battle-token.moving .soldiers use:nth-child(3n+1){animation-delay:-.14s}
+  .battle-token.moving .soldiers use:nth-child(3n+2){animation-delay:-.28s}
+  .battle-token.moving.cavalry .soldiers use,.battle-token.moving .soldiers.cavalry use{animation-duration:.26s}
+  .battle-token.charging .soldiers use{animation-duration:.22s}
+  .dust-trail i{animation:dust-puff 1.1s ease-out infinite}
+  .dust-trail i:nth-child(2){animation-delay:-.37s}
+  .dust-trail i:nth-child(3){animation-delay:-.74s}
+  .clash-flash::before{animation:clash-dust 1.4s ease-in-out infinite alternate}
+  .clash-flash b{animation:clash-sparks .32s steps(2) infinite}
+  .clash-flash i{animation:clash-glint .5s ease-out infinite}
+}
+@keyframes march-step{from{translate:0 -.7px}to{translate:0 .7px}}
+.dust-trail{position:absolute;left:50%;top:50%;z-index:-1;width:120px;height:56px;pointer-events:none}
+.dust-trail i{position:absolute;left:0;top:50%;width:40px;height:28px;margin-top:-14px;border-radius:50%;
+  background:radial-gradient(ellipse,#d8c79ae6 0%,#c4b0848c 50%,#b8a47800 72%);filter:blur(1px)}
+.dust-trail i:nth-child(2){top:28%;left:8px}.dust-trail i:nth-child(3){top:72%;left:8px}
+@keyframes dust-puff{0%{transform:translateX(34px) scale(.5);opacity:0}25%{opacity:1}100%{transform:translateX(-6px) scale(1.5);opacity:0}}
+/* Melee: dust and steel instead of a crossed-swords glyph */
+.clash-flash{width:46px;height:46px;z-index:12}
+.clash-flash::before{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,#d8c79a99 0%,#c4b08455 48%,#b8a47800 70%);filter:blur(1.5px)}
+.clash-flash b{position:relative;font-size:0;width:30px;height:30px;
+  background:radial-gradient(circle at 50% 50%,#fff6d0 0 1.5px,#0000 2.5px),
+    radial-gradient(circle at 26% 34%,#ffe08a 0 1px,#0000 2px),radial-gradient(circle at 74% 30%,#ffe08a 0 1.2px,#0000 2.2px),
+    radial-gradient(circle at 30% 72%,#ffd06a 0 1px,#0000 2px),radial-gradient(circle at 70% 70%,#fff0b0 0 1px,#0000 2px),
+    conic-gradient(from 0deg,#0000 0 10deg,#fff3c480 10deg 13deg,#0000 13deg 55deg,#fff3c480 55deg 58deg,#0000 58deg 130deg,#fff3c480 130deg 133deg,#0000 133deg 200deg,#fff3c480 200deg 203deg,#0000 203deg 290deg,#fff3c480 290deg 293deg,#0000 293deg);
+  border-radius:50%;text-shadow:none;mask:radial-gradient(circle,#000 45%,#0000 70%)}
+.clash-flash i{position:absolute;inset:6px;right:auto;top:auto;width:34px;height:34px;font-size:0;border-radius:50%;border:1px solid #fff3c400;color:transparent}
+@keyframes clash-dust{from{transform:scale(.92);opacity:.75}to{transform:scale(1.12);opacity:1}}
+@keyframes clash-sparks{0%{transform:rotate(0) scale(.9);opacity:1}100%{transform:rotate(40deg) scale(1.1);opacity:.75}}
+@keyframes clash-glint{0%{transform:scale(.3);border-color:#fff3c4cc}100%{transform:scale(1.1);border-color:#fff3c400}}
+.clash-flash.charge b{width:38px;height:38px}

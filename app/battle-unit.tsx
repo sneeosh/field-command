@@ -11,7 +11,9 @@ import { UnitPortrait } from './unit-portrait';
 export const kindIcon=(kind:BattleUnit['kind'])=>({Infantry:'⚔',Spears:'♜',Cavalry:'♞',Archers:'➶'})[kind];
 export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onInspect,enemyAction='inspect',crowded=false,detailed=false}:{unit:BattleUnit;selected:boolean;inspected:boolean;number:number;onClick:(e:MouseEvent,u:BattleUnit)=>void;onInspect:(id:number|null)=>void;enemyAction?:'attack'|'inspect'|'ignore';crowded?:boolean;detailed?:boolean}){
   const routing=u.morale<moraleRule('rout_threshold');
-  return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''} ${crowded?'crowded':''} ${detailed?'detailed':''}`}
+  const moving=!routing&&(u.charging||Math.hypot(u.tx-u.x,u.ty-u.y)>.4);
+  const dusty=moving&&(u.kind==='Cavalry'||u.charging);
+  return <button className={`battle-token ${u.side} ${selected?'selected':''} ${inspected?'inspected':''} ${routing?'routing':''} ${crowded?'crowded':''} ${detailed?'detailed':''} ${moving?'moving':''} ${u.charging?'charging':''}`}
     style={{left:`${u.x}%`,top:`${u.y}%`,['--banner-y' as string]:`${-Math.min(64,Math.round(formationReach(u,routing,formationRadius(u)*26))+6)}px`}}
     aria-label={`${u.side==='rome'?'Your':'Enemy'} ${u.name}, ${u.kind}, ${u.men} soldiers. ${u.side==='carthage'?(enemyAction==='attack'?'Attack with selected troops':enemyAction==='inspect'?'Inspect unit':'Attack unavailable'):'Select unit'}`}
     aria-pressed={u.side==='rome'?selected:inspected}
@@ -19,6 +21,7 @@ export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onIns
     onPointerDown={e=>e.stopPropagation()} onClick={e=>onClick(e,u)}
     onPointerEnter={e=>{if(e.pointerType==='mouse')onInspect(u.id)}} onPointerLeave={e=>{if(e.pointerType==='mouse')onInspect(null)}}
     onFocus={()=>onInspect(u.id)} onBlur={()=>onInspect(null)}>
+    {dusty&&<span className="dust-trail" style={{transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} aria-hidden="true"><i/><i/><i/></span>}
     <SoldierFormation unit={u} routing={routing} fighting={u.charging||u.attackTarget!==null} frontage={formationRadius(u)*26}/>
     <span className="token-facing" style={{transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} aria-hidden="true">➤</span>
     <span className="token-badge"><span aria-hidden="true">{kindIcon(u.kind)}</span><b>{number}</b></span>
