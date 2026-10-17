@@ -826,3 +826,42 @@ select,input,textarea{border-radius:0}
   .report-pennant{margin-right:5px}
   .post-battle>section.report-scroll{padding:34px 14px 38px}
 }
+
+/* Weather: ground and sky layers */
+.weather-rain:after,.weather-fog:after{display:none}
+.weather-heat{filter:none}
+.weather-ground{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
+.weather-sky{position:absolute;inset:0;z-index:13;pointer-events:none;overflow:hidden}
+/* Rain: overcast light, two depths of slanting rain, puddles with ripples */
+.weather-ground.rain{background:linear-gradient(#1a2a3033,#1a2a3022)}
+.puddle{position:absolute;transform:translate(-50%,-50%);border-radius:50%;
+  background:radial-gradient(ellipse at 40% 40%,#9fb3b866 0%,#5f777d55 45%,#3c4f5433 70%,#0000 72%);box-shadow:inset 0 1px 2px #e9f0f033}
+.puddle i{position:absolute;left:30%;top:35%;width:22%;height:30%;border:1px solid #d8e4e4aa;border-radius:50%;opacity:0}
+.puddle i+i{left:58%;top:50%}
+.weather-sky.rain{background:linear-gradient(180deg,#0d141855,#0d141811 60%,#0d141833)}
+.rain-sheet{position:absolute;inset:-30%;transform:rotate(14deg);
+  background:radial-gradient(1px 9px at 30% 40%,#e2ecec99,#e2ecec00) 0 0/37px 41px,radial-gradient(1.2px 10px at 72% 18%,#e2ecec88,#e2ecec00) 0 0/53px 47px,radial-gradient(1px 8px at 52% 78%,#e2ecec77,#e2ecec00) 0 0/29px 59px}
+.rain-sheet.far{opacity:.55;background:radial-gradient(.8px 6px at 40% 30%,#e2ecec88,#e2ecec00) 0 0/23px 31px,radial-gradient(.8px 6px at 80% 70%,#e2ecec77,#e2ecec00) 0 0/19px 37px;filter:blur(.3px)}
+/* Fog: pale veil with banks drifting across */
+.weather-sky.fog{background:linear-gradient(90deg,#d9ded14d,#d9ded126 45%,#d9ded159)}
+.fog-bank{position:absolute;height:34%;border-radius:50%;transform:translate(-10%,-50%);
+  background:radial-gradient(ellipse at 50% 50%,#e4e8dccc 0%,#dfe4d888 38%,#dfe4d800 70%);filter:blur(8px)}
+/* Heat: bleached ground, warm glare, rising shimmer */
+.weather-ground.heat{background:radial-gradient(ellipse at 50% 40%,#e8d29a55,#c9a35a33 60%,#a0703a33),
+  repeating-linear-gradient(33deg,#0000 0 22px,#6b4a2a0d 22px 23px),repeating-linear-gradient(-58deg,#0000 0 31px,#6b4a2a0b 31px 32px)}
+.weather-sky.heat{background:radial-gradient(ellipse at 75% 0%,#fff1c466,#fff1c400 55%),linear-gradient(#e8b45022,#e8b45014)}
+.heat-haze{position:absolute;inset:-10% 0;opacity:.32;
+  background:repeating-linear-gradient(0deg,#0000 0 26px,#fff6dc33 26px 30px,#0000 30px 52px);filter:blur(3px)}
+@media(prefers-reduced-motion:no-preference){
+  .rain-sheet.near{animation:rain-fall .34s linear infinite}
+  .rain-sheet.far{animation:rain-fall-far .5s linear infinite}
+  .puddle i{animation:ripple 1.8s ease-out infinite}
+  .fog-bank{animation:fog-drift 38s linear infinite alternate}
+  .heat-haze{animation:haze-rise 3.2s linear infinite}
+  .heat-haze.late{animation-delay:-1.6s;opacity:.2}
+}
+@keyframes rain-fall{from{background-position:0 0,0 0,0 0}to{background-position:0 41px,0 47px,0 59px}}
+@keyframes rain-fall-far{from{background-position:0 0,0 0}to{background-position:0 31px,0 37px}}
+@keyframes ripple{0%{transform:scale(.2);opacity:.9}100%{transform:scale(1.4);opacity:0}}
+@keyframes fog-drift{from{transform:translate(-25%,-50%)}to{transform:translate(20%,-50%)}}
+@keyframes haze-rise{from{transform:translateY(0) skewX(0deg)}50%{transform:translateY(-15px) skewX(1.5deg)}to{transform:translateY(-30px) skewX(0deg)}}
