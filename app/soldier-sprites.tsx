@@ -187,6 +187,30 @@ export function SoldierSpriteDefs(){
         <ellipse cx="3" cy="-6.2" rx="2.4" ry="4.6" transform="rotate(60 3 -6.2)" className="spr-body"/>
         <circle cx="7.4" cy="-8.4" r="2" className="spr-helm"/>
       </symbol>
+      {/* Missile troops loosing: the inner groups animate (see .fire-* in globals.css) */}
+      <symbol id="spr-skirm-throw" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.1" rx="5.4" ry="3" transform="rotate(-12)" className="spr-body"/>
+        <circle cx="-4.6" cy="-1.6" r="3.1" className="spr-shield"/>
+        <g className="fire-throw"><path d="M4.2 4 L4.6 -9" stroke="#6b4a2a" strokeWidth=".8"/><path d="M4.1 -8.6 L4.6 -11.4 L5.1 -8.6 Z" fill="#d9d6cc"/></g>
+        <path d="M2.4 0.8 L4.4 1.6" stroke="#c8a07a" strokeWidth="1.1" strokeLinecap="round"/>
+        <circle cx="0" cy="0.6" r="2.5" className="spr-hood"/>
+      </symbol>
+      <symbol id="spr-pelta-throw" viewBox="-12 -24 24 36">
+        <ellipse cx="0" cy="1.1" rx="5.4" ry="3" transform="rotate(-12)" className="spr-body"/>
+        <path d="M-8.6 -2.4 Q-4.6 -7.4 -0.6 -2.4 Q-4.6 -4.6 -8.6 -2.4 Z" className="spr-shield"/>
+        <g className="fire-throw"><path d="M4.2 4 L4.6 -9" stroke="#6b4a2a" strokeWidth=".8"/><path d="M4.1 -8.6 L4.6 -11.4 L5.1 -8.6 Z" fill="#d9d6cc"/></g>
+        <circle cx="0" cy="0.6" r="2.5" className="spr-hood"/>
+      </symbol>
+      <symbol id="spr-yumi-draw" viewBox="-12 -24 24 36">
+        <path d="M0 3 V9.6" stroke="#6b4a2a" strokeWidth=".5"/>
+        <rect x="-1.7" y="4.2" width="3.4" height="5.6" className="spr-flag"/>
+        <ellipse cx="0" cy="1.2" rx="5.6" ry="3.2" className="spr-body"/>
+        <path d="M-7.5 -4.6 Q0 -10 7.5 -4.6" fill="none" stroke="#6b4a2a" strokeWidth="1.1"/>
+        <g className="fire-draw"><path d="M-7.5 -4.6 L0 0.4 L7.5 -4.6" fill="none" stroke="#e9dfc4" strokeWidth=".4"/></g>
+        <g className="fire-arrow"><path d="M0 0.4 V-9.5" stroke="#7a5a36" strokeWidth=".6"/><path d="M-.5 -9 L0 -10.6 L.5 -9 Z" fill="#d9d6cc"/></g>
+        <circle cx="0" cy="0.6" r="4" className="spr-hat"/>
+        <circle cx="0" cy="0.6" r="1.1" className="spr-trim"/>
+      </symbol>
     </defs>
   </svg>;
 }
@@ -222,12 +246,13 @@ export function fallenSprite(u:Pick<BattleUnit,"key"|"kind"|"side">){
   return "spr-fallen";
 }
 
-export function soldierLayout(u:Pick<BattleUnit,"id"|"key"|"kind"|"side"|"men"|"formation"|"width">,routing:boolean,fighting:boolean,frontage:number):Spot[]{
+const FIRING:Record<string,string>={"spr-skirm":"spr-skirm-throw","spr-pelta":"spr-pelta-throw","spr-yumi":"spr-yumi-draw"};
+export function soldierLayout(u:Pick<BattleUnit,"id"|"key"|"kind"|"side"|"men"|"formation"|"width">,routing:boolean,fighting:boolean,frontage:number,firing=false):Spot[]{
   const cav=u.kind==="Cavalry";
   const count=Math.max(3,Math.min(cav?12:30,Math.round(u.men/(cav?4:5))));
   const base=unitSprite(u);
   const guard=u.formation==="Guard"&&!cav;
-  const sprite=routing?"spr-rout":guard&&(base==="spr-spear"||base==="spr-spear-round")?"spr-brace":base;
+  const sprite=routing?"spr-rout":firing&&FIRING[base]?FIRING[base]:guard&&(base==="spr-spear"||base==="spr-spear-round")?"spr-brace":base;
   const dx=cav?15:guard?9.5:u.kind==="Archers"?13:10.5, dy=cav?21:guard?11:u.kind==="Archers"?15:12.5;
   const loose=routing?3.4:u.kind==="Archers"?1.6:cav?.45:.5;
   const out:Spot[]=[];
@@ -254,9 +279,9 @@ export function formationReach(u:BattleUnit,routing:boolean,frontage:number){
   return Math.max(...spots.map(s=>-(s.x*Math.sin(t)+s.y*Math.cos(t))))+FIGURE*.6;
 }
 
-type FormationProps={unit:BattleUnit;routing:boolean;fighting:boolean;frontage:number};
-function SoldierFormationView({unit:u,routing,fighting,frontage}:FormationProps){
-  const spots=soldierLayout(u,routing,fighting,frontage);
+type FormationProps={unit:BattleUnit;routing:boolean;fighting:boolean;frontage:number;firing?:boolean};
+function SoldierFormationView({unit:u,routing,fighting,frontage,firing=false}:FormationProps){
+  const spots=soldierLayout(u,routing,fighting,frontage,firing);
   const xs=spots.map(s=>s.x),ys=spots.map(s=>s.y);
   const pad=FIGURE*1.6;
   const minX=Math.min(...xs)-pad,maxX=Math.max(...xs)+pad,minY=Math.min(...ys)-pad*1.4,maxY=Math.max(...ys)+pad;
@@ -264,10 +289,11 @@ function SoldierFormationView({unit:u,routing,fighting,frontage}:FormationProps)
   return <svg className={`soldiers ${LOOK[u.key]?.finish??""} ${u.kind.toLowerCase()}`} width={w} height={h} viewBox={`${minX} ${minY} ${w} ${h}`}
     style={{transform:`translate(-50%,-50%) rotate(${u.facing+90}deg)`}} aria-hidden="true" focusable="false">
     {spots.map((s,i)=><use key={i} href={`#${s.sprite}`} x={s.x-HALF} y={s.y-FIGURE} width={FIGURE} height={FIGURE*1.5}
-      transform={s.a?`rotate(${s.a.toFixed(1)} ${s.x.toFixed(1)} ${s.y.toFixed(1)})`:undefined}/>)}
+      transform={s.a?`rotate(${s.a.toFixed(1)} ${s.x.toFixed(1)} ${s.y.toFixed(1)})`:undefined}
+      style={firing?{"--fire-delay":`${-((i*.23)%1).toFixed(2)}s`} as React.CSSProperties:undefined}/>)}
   </svg>;
 }
 
 // Figures only change with headcount, formation, facing and state, not every tick of movement.
-export const SoldierFormation=memo(SoldierFormationView,(a,b)=>a.routing===b.routing&&a.fighting===b.fighting&&a.frontage===b.frontage&&
+export const SoldierFormation=memo(SoldierFormationView,(a,b)=>a.routing===b.routing&&a.fighting===b.fighting&&a.firing===b.firing&&a.frontage===b.frontage&&
   a.unit.id===b.unit.id&&a.unit.men===b.unit.men&&a.unit.formation===b.unit.formation&&a.unit.facing===b.unit.facing&&a.unit.key===b.unit.key&&a.unit.side===b.unit.side);

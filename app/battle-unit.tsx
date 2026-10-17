@@ -22,7 +22,7 @@ export function BattleUnitMarker({unit:u,selected,inspected,number,onClick,onIns
     onPointerEnter={e=>{if(e.pointerType==='mouse')onInspect(u.id)}} onPointerLeave={e=>{if(e.pointerType==='mouse')onInspect(null)}}
     onFocus={()=>onInspect(u.id)} onBlur={()=>onInspect(null)}>
     {dusty&&<span className="dust-trail" style={{transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} aria-hidden="true"><i/><i/><i/></span>}
-    <SoldierFormation unit={u} routing={routing} fighting={u.charging||u.attackTarget!==null} frontage={formationRadius(u)*26}/>
+    <SoldierFormation unit={u} routing={routing} fighting={u.charging||u.attackTarget!==null} firing={u.kind==='Archers'&&u.attackTarget!==null&&u.ammo>0&&!moving&&!u.holdFire} frontage={formationRadius(u)*26}/>
     <span className="token-facing" style={{transform:`translate(-50%,-50%) rotate(${u.facing}deg)`}} aria-hidden="true">➤</span>
     <span className="token-badge"><span aria-hidden="true">{kindIcon(u.kind)}</span><b>{number}</b></span>
     <span className="token-name">{u.name}</span><span className="token-count">{routing?'ROUT':`${u.men} men`}</span>
