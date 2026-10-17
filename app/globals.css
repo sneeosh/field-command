@@ -875,3 +875,27 @@ select,input,textarea{border-radius:0}
 @keyframes fire-throw{0%{transform:translateY(5px) rotate(-18deg);opacity:1}55%{transform:translateY(5px) rotate(-26deg)}78%{transform:translateY(-3px) rotate(4deg);opacity:1}82%,100%{transform:translateY(-9px);opacity:0}}
 @keyframes fire-draw{0%{transform:scaleY(.1)}60%{transform:scaleY(1)}72%{transform:scaleY(1)}76%,100%{transform:scaleY(.1)}}
 @keyframes fire-arrow{0%{transform:translateY(-5px);opacity:1}60%,72%{transform:translateY(0);opacity:1}76%{transform:translateY(-14px);opacity:0}100%{transform:translateY(-14px);opacity:0}}
+
+/* Campaign map movement: march orders, gliding standards and sieges */
+.march-order line{stroke:#f6e2a6;stroke-width:3.2;stroke-dasharray:7 6;stroke-linecap:round;filter:drop-shadow(0 1px 1px #0009)}
+.march-order.rome line{stroke:color-mix(in srgb,var(--roman) 45%,#f6e2a6)}
+.march-order.carthage line{stroke:color-mix(in srgb,var(--enemy) 45%,#f6e2a6)}
+.march-order circle{fill:#f6e2a6;stroke:#1a140d;stroke-width:1}
+.map-army.marching{transition:left 1.4s cubic-bezier(.45,.05,.4,1),top 1.4s cubic-bezier(.45,.05,.4,1)}
+.siege-smoke{position:absolute;z-index:4;width:0;height:0;pointer-events:none}
+.siege-smoke b{position:absolute;left:-18px;top:-22px;width:36px;height:24px;border-radius:50%;
+  background:radial-gradient(ellipse,#ff9a3ccc 0%,#e0581f88 35%,#e0581f00 70%);mix-blend-mode:screen}
+.siege-smoke i{position:absolute;left:-9px;top:-30px;width:18px;height:18px;border-radius:50%;
+  background:radial-gradient(circle,#5a5550dd 0%,#4a4540aa 45%,#4a454000 70%);filter:blur(1.5px)}
+.siege-smoke i:nth-child(2){left:-2px}.siege-smoke i:nth-child(3){left:-14px}
+.siege-smoke small{position:absolute;left:50%;top:-56px;transform:translateX(-50%);white-space:nowrap;padding:1px 5px;
+  background:#8a1d15;border:1px solid #e3c574;color:#fbe9b8;font:700 9px/1.4 var(--font-display),serif;letter-spacing:.12em}
+@media(prefers-reduced-motion:no-preference){
+  .march-order line{animation:march-dash 1.1s linear infinite}
+  .siege-smoke i{animation:smoke-rise 3.2s ease-out infinite}
+  .siege-smoke i:nth-child(2){animation-delay:-1.1s}.siege-smoke i:nth-child(3){animation-delay:-2.2s}
+  .siege-smoke b{animation:fire-flicker .45s steps(3) infinite alternate}
+}
+@keyframes march-dash{to{stroke-dashoffset:-13}}
+@keyframes smoke-rise{0%{transform:translate(0,4px) scale(.5);opacity:0}20%{opacity:1}100%{transform:translate(6px,-34px) scale(2.2);opacity:0}}
+@keyframes fire-flicker{from{opacity:.65;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
