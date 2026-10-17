@@ -899,3 +899,51 @@ select,input,textarea{border-radius:0}
 @keyframes march-dash{to{stroke-dashoffset:-13}}
 @keyframes smoke-rise{0%{transform:translate(0,4px) scale(.5);opacity:0}20%{opacity:1}100%{transform:translate(6px,-34px) scale(2.2);opacity:0}}
 @keyframes fire-flicker{from{opacity:.65;transform:scale(.92)}to{opacity:1;transform:scale(1.08)}}
+
+/* Command posts: generals, bodyguards and great standards behind each line */
+.command-post{position:absolute;z-index:10;width:0;height:0;pointer-events:none;transition:left 1.2s linear,top 1.2s linear}
+.command-post .command-riders{position:absolute;left:0;top:0;overflow:visible;filter:drop-shadow(0 2px 2px #0009)}
+.command-post .general-figure{--cloth:#e3c574;--helm:#e3c574}
+.command-post.carthage .soldiers{--body:#c9b48a;--shield:var(--enemy);--trim:#d1ae58;--helm:#8a8a80;--plume:var(--enemy);--hood:#2b2015;--horse:#8a6a45;--cloth:var(--enemy)}
+.command-post.carthage .general-figure{--cloth:#d1ae58;--helm:#d1ae58}
+.command-post.greek .soldiers{--body:#e2d6b8}
+.command-post.japan .soldiers{--body:#2e2622;--helm:#2e2622}
+.command-standard{position:absolute;left:-15px;top:-78px;width:30px;height:60px;overflow:visible;filter:drop-shadow(1px 3px 2px #000a)}
+.std-pole{stroke:#3a2a14;stroke-width:1.6}
+.std-gold{fill:#e3c574;stroke:#6b4a14;stroke-width:.6}
+.std-wreath{fill:none;stroke:#e3c574;stroke-width:1.4}
+.std-cloth{fill:var(--roman);stroke:#e3c574;stroke-width:.6}
+.command-post.carthage .std-cloth{fill:var(--enemy);stroke:#d1ae58}
+.std-fringe{stroke:#e3c574;stroke-width:1.4;stroke-dasharray:1 1}
+.std-mon{fill:none;stroke:#e3c574;stroke-width:1}
+.std-ribs{stroke:#6b4a14;stroke-width:.6}
+.command-name{position:absolute;left:50%;top:-98px;transform:translateX(-50%);white-space:nowrap;padding:1px 6px;background:#1a140de6;border:1px solid var(--bronze-edge);
+  color:var(--aurum-hi);font:700 10px/1.4 var(--font-display),serif;letter-spacing:.12em;text-transform:uppercase}
+.command-post.carthage .command-name{border-color:#d1ae58;color:#f1dda2}
+@media(prefers-reduced-motion:no-preference){.command-standard .std-cloth{animation:banner-wave 2.4s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:0 0}}
+@keyframes banner-wave{from{transform:skewY(0deg)}to{transform:skewY(5deg)}}
+
+/* Standards fall when a unit routs and rise in gold when it rallies */
+.battle-token .token-badge{transition:transform .5s ease,filter .5s ease,opacity .5s ease}
+.battle-token.routing .token-badge{transform:translateY(calc(var(--banner-y,-30px) + 20px)) rotate(-38deg);filter:grayscale(.7) brightness(.8);opacity:.8}
+.battle-token.rallied .token-badge{box-shadow:0 0 0 1px #0d0a07,0 0 0 3px #f6e2a6,0 0 18px #e3c574}
+.rally-ribbon{position:absolute;left:50%;top:calc(var(--banner-y,-30px) - 4px);transform:translateX(-50%);z-index:3;white-space:nowrap;padding:1px 6px;
+  background:#e3c574;color:#2b2015;font:800 9px/1.4 var(--font-display),serif;letter-spacing:.2em;box-shadow:0 2px 6px #000a}
+@media(prefers-reduced-motion:no-preference){
+  .battle-token.rallied .token-badge{animation:rally-raise .9s ease-out 1}
+  .rally-ribbon{animation:rally-ribbon 2.2s ease-out both}
+}
+@keyframes rally-raise{0%{transform:translateY(calc(var(--banner-y,-30px) + 20px)) rotate(-30deg)}60%{transform:translateY(calc(var(--banner-y,-30px) - 2px)) rotate(4deg)}100%{transform:translateY(calc(var(--banner-y,-30px) + 4px)) rotate(0)}}
+@keyframes rally-ribbon{0%{opacity:0;transform:translate(-50%,6px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+
+/* Light: the battle wears on toward dusk */
+.dusk-light{position:absolute;inset:0;z-index:12;pointer-events:none;transition:opacity 2s linear;mix-blend-mode:multiply;
+  background:linear-gradient(100deg,#f29a4a 0%,#d0704aaa 35%,#6a447abb 75%,#33295ae0 100%)}
+
+/* The battle opens with a herald's title */
+.battle-herald{position:absolute;left:50%;top:38%;z-index:15;transform:translate(-50%,-50%);pointer-events:none;text-align:center;display:flex;flex-direction:column;gap:4px;
+  padding:14px 34px;background:radial-gradient(ellipse,#0d0a07cc 0%,#0d0a0788 60%,#0d0a0700 100%)}
+.battle-herald small{font:700 12px var(--font-display),serif;letter-spacing:.4em;color:#cdbb92;text-transform:uppercase}
+.battle-herald strong{font:800 clamp(26px,4.4vw,52px)/1.1 var(--font-display),serif;letter-spacing:.12em;color:var(--aurum-hi);text-transform:uppercase;text-shadow:0 2px 0 #4a3714,0 0 30px #e3c57455}
+@media(prefers-reduced-motion:no-preference){.battle-herald{animation:herald 3.8s ease-out both}}
+@keyframes herald{0%{opacity:0;transform:translate(-50%,-44%) scale(.96)}18%{opacity:1;transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0}}
